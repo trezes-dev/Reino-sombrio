@@ -872,7 +872,7 @@ function aplicarPermissoes() {
 }
 function abrirDev() {
   const el = document.getElementById("dev-painel");
-  if (!el) { alert("ERRO: painel dev nao existe no HTML"); return; }
+  if (!el) return;
   el.style.display = "flex";
   aplicarPermissoes();
 }
@@ -1117,4 +1117,71 @@ async function removerAmigo(nome) {
 
 
 </script>
-</body></html>
+<div id="dev-painel" style="position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:400;display:none;flex-direction:column;padding:14px;overflow-y:auto;font-family:monospace">
+  <div style="max-width:520px;width:100%;margin:auto;background:#1a0a2a;border:3px solid #a06bff;padding:14px;border-radius:6px">
+    <h2 style="text-align:center;font-size:14px;color:#a06bff;margin:0 0 12px">CONSOLE</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+      <button data-perm="dev" onclick="devAcao('god')" style="padding:10px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:5px;font-family:inherit;font-size:11px;cursor:pointer">God ON/OFF</button>
+      <button data-perm="ajudante,mod,admin,dev" onclick="devAcao('curar')" style="padding:10px;background:#333;color:#fff;border:1px solid #4f4;border-radius:5px;font-family:inherit;font-size:11px;cursor:pointer">Curar</button>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Ouro</div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-ouro" type="number" value="1000" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar</button>
+      </div>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Nivel</div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-nivel" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('nivel', document.getElementById('dev-nivel').value)" style="padding:6px 10px;background:#a06bff;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Setar</button>
+      </div>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Dano bonus</div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-dano" type="number" value="50" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('dano', document.getElementById('dev-dano').value)" style="padding:6px 10px;background:#ff5566;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Setar</button>
+      </div>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Speed</div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-speed" type="number" value="2" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('speed', document.getElementById('dev-speed').value)" style="padding:6px 10px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Setar</button>
+      </div>
+    </div>
+    <div data-perm="ajudante,mod,admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Teleporte (x, y)</div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-x" type="number" value="5" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-y" type="number" value="5" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('teleporte', null, {x: document.getElementById('dev-x').value, y: document.getElementById('dev-y').value})" style="padding:6px 10px;background:#4f4;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Ir</button>
+      </div>
+    </div>
+    <div data-perm="mod,admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Spawnar mob</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px;margin-bottom:4px">
+        <input id="dev-mob-nome" value="Dragao" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-mob-hp" type="number" value="500" placeholder="hp" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-mob-dano" type="number" value="50" placeholder="dano" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      </div>
+      <button onclick="devAcao('spawn_perto', null, {mob_nome: document.getElementById('dev-mob-nome').value, mob_hp: document.getElementById('dev-mob-hp').value, mob_dano: document.getElementById('dev-mob-dano').value})" style="width:100%;padding:8px;background:#c33;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Spawnar</button>
+      <div style="display:flex;gap:4px;margin-top:4px">
+        <button onclick="devAcao('mobs_listar')" style="flex:1;padding:6px;background:#333;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:10px;cursor:pointer">Listar</button>
+        <button onclick="devAcao('mobs_limpar')" style="flex:1;padding:6px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:4px;font-family:inherit;font-size:10px;cursor:pointer">Limpar</button>
+      </div>
+    </div>
+    <div data-perm="mod,admin,dev" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#888;margin-bottom:4px">Jogador</div>
+      <input id="dev-alvo" placeholder="nome" style="width:100%;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;margin-bottom:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <button onclick="devAcao('banir', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:8px;background:#c33;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Banir</button>
+        <button onclick="devAcao('dar_cargo', null, {alvo: document.getElementById('dev-alvo').value, novo_cargo: 'vip'})" style="padding:8px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar VIP</button>
+      </div>
+    </div>
+    <div id="dev-msg" style="background:#0a0a14;border:1px solid #a06bff;border-radius:4px;padding:8px;font-size:11px;color:#a06bff;margin-bottom:10px;min-height:20px">Pronto</div>
+    <button onclick="fecharDev()" style="width:100%;padding:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
+  </div>
+</div></body></html>
