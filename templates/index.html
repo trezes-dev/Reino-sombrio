@@ -326,6 +326,28 @@ const EMOJI_ITEM = {
   "Arco Curto": "🏹", "Escudo de Madeira": "🛡️", "Armadura de Couro": "🥼",
   "Poção de Cura": "🧪"
 };
+
+const SPRITE_ITEM = {
+  "Espada Curta": "/static/sprites/itens/espada-aco.png",
+  "Adaga Enferrujada": "/static/sprites/itens/adaga.png",
+  "Cajado": "/static/sprites/itens/cajado.png",
+  "Arco Curto": "/static/sprites/itens/arco.png",
+  "Escudo de Madeira": "/static/sprites/itens/escudo-madeira.png",
+  "Armadura de Couro": "/static/sprites/itens/escudo.png",
+  "Poção de Cura": "/static/sprites/itens/pocao-vermelha.png",
+  "Poção de Mana": "/static/sprites/itens/pocao-azul.png",
+  "Machado": "/static/sprites/itens/machado.png",
+  "Lança": "/static/sprites/itens/lanca.png"
+};
+
+function spriteDe(nome) { return SPRITE_ITEM[nome] || null; }
+
+function iconeDe(nome, tam) {
+  tam = tam || 32;
+  const url = spriteDe(nome);
+  if (url) return '<img src="' + url + '" width="' + tam + '" height="' + tam + '" style="image-rendering:pixelated;vertical-align:middle" alt="' + nome + '">';
+  return emojiDe(nome);
+}
 const EMOJI_CLASSE = { "cavaleiro": "⚔️ Cavaleiro", "arqueiro": "🏹 Arqueiro", "mago": "🔮 Mago" };
 const SPRITE_CLASSE = {
   "cavaleiro": "/static/sprites/player/baixo-0.png",
@@ -517,7 +539,7 @@ function render(j) {
       const it = invPorId[itemId];
       const semQtd = it.qtd <= 0;
       slot.className = "slot" + (semQtd ? " vazio" : "");
-      slot.innerHTML = emojiDe(it.nome) + '<span class="qtd">' + it.qtd + '</span>';
+      slot.innerHTML = iconeDe(it.nome, 36) + '<span class="qtd">' + it.qtd + '</span>';
       slot.title = it.nome;
     } else {
       slot.className = "slot";
@@ -723,8 +745,8 @@ function abrirInv() {
     slot.style.cssText = "width:52px;height:52px;background:rgba(40,30,20,0.9);border:2px solid #6a5a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer";
     if (i < itens.length) {
       const [nome,tipo,bonus,qtd,id] = itens[i];
-      slot.innerHTML = emojiDe(nome) + '<span style="position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000">' + qtd + '</span>';
-      if (qtd <= 0) slot.style.opacity = "0.4";
+      slot.innerHTML = iconeDe(nome, 40) + '<span style="position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000">' + qtd + '</span>';
+      if (qtd <= 0) { slot.style.opacity = "0.35"; slot.style.filter = "grayscale(1)"; }
       slot.onclick = () => selecionarInv(itens[i]);
     } else { slot.style.opacity = "0.3"; }
     grid.appendChild(slot);
@@ -736,13 +758,14 @@ function fecharInv() { fecharModal("modal-inv"); }
 function selecionarInv(item) {
   const [nome,tipo,bonus,qtd,id] = item;
   document.getElementById("inv-info-conteudo").innerHTML =
-    '<div style="font-size:22px;text-align:center;margin-bottom:6px">' + emojiDe(nome) + '</div>' +
+    '<div style="text-align:center;margin-bottom:6px">' + iconeDe(nome, 64) + '</div>' +
     '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Nome</span><b>' + nome + '</b></div>' +
     '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Tipo</span><b>' + tipo + '</b></div>' +
     '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Bonus</span><b>+' + bonus + '</b></div>' +
     '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888">Qtd</span><b>' + qtd + '</b></div>' +
     '<div style="margin-top:10px;display:flex;gap:6px">' +
-    (tipo === "pocao" ? '<button onclick="usarPocaoInv()" style="flex:1;padding:8px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Usar</button>' : "") +
+    (tipo === "pocao" && qtd > 0 ? '<button onclick="usarPocaoInv()" style="flex:1;padding:8px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Usar</button>' : "") +
+    (qtd <= 0 ? '<div style="flex:1;padding:8px;background:#3a0a0a;color:#ff8899;border-radius:6px;text-align:center;font-size:11px">Esgotado</div>' : "") +
     '<button onclick="porNaHotbar(' + id + ')" style="flex:1;padding:8px;background:#333;color:#eee;border:1px solid #555;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer">Hotbar</button></div>';
 }
 async function usarPocaoInv() { await usarFerramenta(); abrirInv(); }
@@ -764,7 +787,7 @@ function abrirPicker(idx) {
   itens.forEach(x => {
     const div = document.createElement("div");
     div.style.cssText = "background:#1a1a2a;border:2px solid #444;border-radius:6px;padding:10px;display:flex;gap:10px;font-size:12px;cursor:pointer";
-    div.innerHTML = emojiDe(x[0]) + ' <span>' + x[0] + ' x' + x[3] + '</span>';
+    div.innerHTML = iconeDe(x[0], 32) + ' <span>' + x[0] + ' x' + x[3] + '</span>';
     div.onclick = () => escolherItem(x[4]);
     lista.appendChild(div);
   });
