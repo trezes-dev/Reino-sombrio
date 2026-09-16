@@ -6,3 +6,8 @@ log.txt
 *.bkp
 templates/index.html.bkp
 templates/index.html.quebrado
+patch_*.py
+fix_*.py
+server_antigo.py
+jogo.py
+migrar_ids.py
