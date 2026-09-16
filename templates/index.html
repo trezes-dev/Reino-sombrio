@@ -655,7 +655,15 @@ async function usarFerramenta() {
   if (j.msg) logMsg(j.msg);
   if (j.estado) render(j.estado);
 }
-function acaoInteragir() { logMsg("Nada para interagir aqui"); }
+async function acaoInteragir() {
+  const r = await fetch("/api/interagir");
+  const j = await r.json();
+  if (j.acao === "abrir_loja") {
+    abrirLoja(j.npc_nome);
+  } else {
+    logMsg(j.msg || "Nada para interagir aqui");
+  }
+}
 
 // ============ JOYSTICK ============
 (function() {
@@ -1018,6 +1026,65 @@ window.addEventListener("orientationchange", () => setTimeout(() => { if (J) ren
 
 // ============ INIT ============
 carregar();
+</script>
+
+<div id="modal-loja" class="modal">
+  <div class="modal-topo">
+    <h2 id="loja-titulo">🏪 LOJA</h2>
+    <button onclick="fecharLoja()">Fechar</button>
+  </div>
+  <div class="modal-corpo" style="background:#10142a;border:2px solid #c9a227;border-radius:6px;padding:14px">
+    <div id="loja-ouro" style="text-align:center;font-size:13px;color:#ffd700;margin-bottom:12px"></div>
+    <div id="loja-itens" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div id="loja-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:8px;font-size:11px;color:#c9a227;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+<script>
+async function abrirLoja(npcNome) {
+  document.getElementById("loja-titulo").textContent = "🏪 " + (npcNome || "LOJA");
+  document.getElementById("loja-msg").style.display = "none";
+  await carregarLoja();
+  abrirModal("modal-loja");
+}
+
+function fecharLoja() { fecharModal("modal-loja"); }
+
+async function carregarLoja() {
+  const r = await fetch("/api/loja/itens");
+  const itens = await r.json();
+  const cont = document.getElementById("loja-itens");
+  const ouro = J ? J.ouro : 0;
+  document.getElementById("loja-ouro").textContent = "💰 Seu ouro: " + ouro;
+  cont.innerHTML = "";
+  itens.forEach(it => {
+    const div = document.createElement("div");
+    div.style.cssText = "background:#0a0a14;border:1px solid #2a2a4a;border-radius:6px;padding:10px;display:flex;align-items:center;gap:10px;font-size:12px";
+    div.innerHTML =
+      '<div style="flex-shrink:0">' + iconeDe(it.nome, 40) + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-weight:bold;color:#eee">' + it.nome + '</div>' +
+        '<div style="font-size:10px;color:#888">' + it.tipo + ' +' + it.bonus + '</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="color:#ffd700;font-weight:bold">' + it.preco + '</div>' +
+        '<button onclick="comprarItem(' + it.id + ')" style="margin-top:4px;padding:5px 10px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:10px;font-weight:bold;cursor:pointer">Comprar</button>' +
+      '</div>';
+    cont.appendChild(div);
+  });
+}
+
+async function comprarItem(lojaId) {
+  const r = await fetch("/api/comprar/" + lojaId);
+  const j = await r.json();
+  const msg = document.getElementById("loja-msg");
+  msg.textContent = j.msg;
+  msg.style.display = "block";
+  if (j.estado) {
+    render(j.estado);
+    document.getElementById("loja-ouro").textContent = "💰 Seu ouro: " + j.estado.ouro;
+  }
+  await carregarLoja();
+}
 </script>
 </body>
 </html>
