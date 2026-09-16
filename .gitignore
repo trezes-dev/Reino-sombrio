@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+venv/
+log.txt
+*.bak
+*.bkp
+templates/index.html.bkp
+templates/index.html.quebrado

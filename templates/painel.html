@@ -1,0 +1,141 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Moderacao</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 15px; min-height: 100vh;
+    background: #0a0a1a; color: #e0e0e0;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    max-width: 640px; margin: auto;
+  }
+  h1 { font-size: 14px; color: #4af6ff; text-shadow: 2px 2px 0 #a06bff; margin: 15px 0; }
+  a { color: #4af6ff; }
+  .topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .topo .meu { font-size: 9px; color: #888; }
+  .filtros { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+  .filtro {
+    padding: 6px 10px; font-size: 9px; background: #222; color: #aaa;
+    border: 1px solid #444; border-radius: 6px; cursor: pointer;
+  }
+  .filtro.on { background: #4af6ff; color: #0a0a1a; border-color: #4af6ff; }
+  .jogador {
+    background: #10142a; border: 2px solid #2a3050; padding: 12px;
+    margin: 8px 0; border-radius: 6px; font-size: 10px;
+  }
+  .jogador .nome { font-size: 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .jogador .info { color: #7a7a9a; line-height: 1.8; }
+  .acoes { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .acoes button {
+    padding: 8px 12px; font-family: inherit; font-size: 9px;
+    background: #222; color: #eee; border: 1px solid #555; border-radius: 6px;
+    cursor: pointer;
+  }
+  .acoes button:hover { background: #333; }
+  .acoes .curar { border-color: #8fff8f; color: #8fff8f; }
+  .acoes .ouro { border-color: #ffd700; color: #ffd700; }
+  .acoes .cargo { border-color: #a06bff; color: #a06bff; }
+  #log {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #0f2a1a; border-top: 2px solid #8fff8f; color: #8fff8f;
+    padding: 10px; font-size: 9px; min-height: 20px; display: none;
+  }
+</style>
+</head>
+<body>
+<div class="topo">
+  <h1>🛡️ PAINEL</h1>
+  <div class="meu">cargo: <b style="color:#4af6ff">{{ cargo }}</b></div>
+</div>
+
+<a href="/">← voltar ao jogo</a>
+
+<div class="filtros">
+  <div class="filtro on" onclick="setFiltro('todos', this)">todos</div>
+  <div class="filtro" onclick="setFiltro('player', this)">players</div>
+  <div class="filtro" onclick="setFiltro('vip', this)">vips</div>
+  <div class="filtro" onclick="setFiltro('ajudante', this)">ajudantes</div>
+  <div class="filtro" onclick="setFiltro('mod', this)">mods</div>
+  <div class="filtro" onclick="setFiltro('admin', this)">admins</div>
+  <div class="filtro" onclick="setFiltro('dev', this)">devs</div>
+</div>
+
+<div id="lista">carregando...</div>
+<div id="log"></div>
+
+<script>
+let filtro = 'todos';
+let todos = [];
+
+function setFiltro(f, el) {
+  filtro = f;
+  document.querySelectorAll('.filtro').forEach(x => x.classList.remove('on'));
+  el.classList.add('on');
+  render();
+}
+
+function toast(msg) {
+  const l = document.getElementById('log');
+  l.textContent = msg;
+  l.style.display = 'block';
+  clearTimeout(window._t);
+  window._t = setTimeout(() => l.style.display = 'none', 2500);
+}
+
+function render() {
+  const el = document.getElementById('lista');
+  let lista = todos;
+  if (filtro !== 'todos') lista = todos.filter(j => j.cargo === filtro);
+  if (!lista.length) { el.innerHTML = '<div style="color:#666;font-size:10px">ninguem aqui</div>'; return; }
+  el.innerHTML = lista.map(j => `
+    <div class="jogador">
+      <div class="nome">
+        <span style="color:${j.cargo_cor}">${j.cargo_badge} ${j.nome}</span>
+        <span style="font-size:9px;color:#666">(${j.login})</span>
+        <span style="font-size:9px;color:${j.cargo_cor};border:1px solid ${j.cargo_cor};padding:2px 6px;border-radius:3px">${j.cargo}</span>
+      </div>
+      <div class="info">
+        ${j.classe} · Nv ${j.nivel} · HP ${j.hp}/${j.hp_max} · ${j.ouro} ouro
+      </div>
+      <div class="acoes">
+        <button class="curar" onclick="acao('/api/mod/curar/${j.id}')">💚 curar</button>
+        <button class="ouro" onclick="darOuro(${j.id})">💰 +100 ouro</button>
+        <button class="cargo" onclick="mudarCargo(${j.id})">👑 cargo</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function carregar() {
+  const r = await fetch('/api/painel/jogadores');
+  if (r.status === 403) { document.getElementById('lista').textContent = 'sem permissao'; return; }
+  todos = await r.json();
+  render();
+}
+
+async function acao(url) {
+  const r = await fetch(url);
+  const j = await r.json();
+  toast(j.msg || j.erro);
+  if (j.msg) carregar();
+}
+
+async function darOuro(id) {
+  const v = prompt('Quanto ouro?', '100');
+  if (!v) return;
+  await acao(`/api/mod/ouro/${id}/${parseInt(v)}`);
+}
+
+async function mudarCargo(id) {
+  const c = prompt('Novo cargo (player/vip/ajudante/mod/admin/dev):', 'vip');
+  if (!c) return;
+  await acao(`/api/mod/cargo/${id}/${c}`);
+}
+
+carregar();
+setInterval(carregar, 5000);
+</script>
+</body></html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin</title>
+<style>
+body{background:#111;color:#eee;font-family:monospace;padding:15px;max-width:600px;margin:auto}
+h1{color:#f44;font-size:20px}h2{color:#4af;font-size:15px;margin-top:20px;border-bottom:1px solid #333;padding-bottom:4px}
+.row{display:flex;gap:6px;margin:6px 0;align-items:center}
+input{padding:10px;font-size:14px;background:#222;color:#eee;border:1px solid #555;border-radius:6px;flex:1;min-width:0}
+button{padding:10px 14px;font-size:14px;background:#333;color:#eee;border:1px solid #555;border-radius:6px}
+button:active{background:#4af}
+#log{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:10px;color:#8f8;margin:10px 0;min-height:24px}
+a{color:#4af}
+</style></head><body>
+<h1>⚡ Painel Admin</h1>
+<div id="log">Pronto</div>
+
+<h2>💰 Ouro</h2>
+<div class="row">
+<input id="ouro_v" type="number" placeholder="1000" value="1000">
+<button onclick="acao('ouro','v='+ouro_v.value)">Dar ouro</button>
+</div>
+
+<h2>❤️ Vida</h2>
+<div class="row">
+<button onclick="acao('curar','')">Curar 100%</button>
+</div>
+
+<h2>📍 Teleporte</h2>
+<div class="row">
+<input id="tx" type="number" placeholder="x" value="5">
+<input id="ty" type="number" placeholder="y" value="5">
+<button onclick="acao('teleporte','x='+tx.value+'&y='+ty.value)">Ir</button>
+</div>
+
+<h2>🎨 Cor do nome</h2>
+<div class="row">
+<input id="cor" type="text" placeholder="#ff00ff" value="#ff00ff">
+<button onclick="acao('cor','cor='+encodeURIComponent(cor.value))">Aplicar</button>
+</div>
+
+<h2>⭐ Nível</h2>
+<div class="row">
+<input id="nv" type="number" placeholder="10" value="10">
+<button onclick="acao('nivel','v='+nv.value)">Setar</button>
+</div>
+
+<h2>🎁 Dar item</h2>
+<div class="row">
+<input id="iid" type="number" placeholder="id" value="3">
+<input id="iqtd" type="number" placeholder="qtd" value="10">
+<button onclick="acao('item','id='+iid.value+'&qtd='+iqtd.value)">Dar</button>
+</div>
+<div style="font-size:12px;color:#888">1=Espada 2=Escudo 3=Poção 4=Adaga 5=Armadura</div>
+
+<h2>👾 Monstros</h2>
+<div class="row">
+<button onclick="acao('limpar_monstros','')">Limpar todos</button>
+</div>
+<div class="row">
+<input id="mn" type="text" placeholder="Goblin" value="Dragão">
+<input id="mx" type="number" placeholder="x" value="5">
+<input id="my" type="number" placeholder="y" value="5">
+<input id="mh" type="number" placeholder="hp" value="200">
+<input id="md" type="number" placeholder="dano" value="30">
+<button onclick="acao('spawn','nome='+encodeURIComponent(mn.value)+'&x='+mx.value+'&y='+my.value+'&hp='+mh.value+'&dano='+md.value)">Spawnar</button>
+</div>
+
+<p style="margin-top:30px"><a href="/">← Voltar ao jogo</a></p>
+
+<script>
+const SENHA = "{{ senha }}";
+async function acao(tipo, params){
+  const url = "/admin/acao?senha="+SENHA+"&tipo="+tipo+"&"+params;
+  const r = await fetch(url);
+  const j = await r.json();
+  document.getElementById("log").textContent = j.msg || j.erro;
+}
+</script>
+</body></html>

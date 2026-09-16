@@ -1,0 +1,98 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reino Sombrio MMORPG</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100vh;
+    background: #0a0a1a;
+    background-image:
+      linear-gradient(rgba(10,14,26,0.92), rgba(10,14,26,0.92)),
+      repeating-linear-gradient(0deg, transparent 0 6px, rgba(74,246,255,0.04) 6px 8px),
+      repeating-linear-gradient(90deg, transparent 0 6px, rgba(74,246,255,0.04) 6px 8px);
+    color: #e0e0e0;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    image-rendering: pixelated;
+  }
+  .card {
+    width: 100%; max-width: 420px;
+    background: #10142a;
+    border: 3px solid #4af6ff;
+    box-shadow: 0 0 0 3px #10142a, 0 0 0 6px #a06bff, 0 0 30px rgba(74,246,255,0.4);
+    padding: 30px 25px;
+    position: relative;
+  }
+  h1 {
+    font-size: 16px; margin: 0 0 6px; color: #4af6ff; text-align: center;
+    text-shadow: 2px 2px 0 #a06bff;
+    line-height: 1.6;
+  }
+  h1 span { display: block; font-size: 11px; color: #a06bff; margin-top: 4px; }
+  .aviso {
+    text-align: center; font-size: 9px; color: #7a7a9a; margin: 12px 0 20px;
+  }
+  label { display: block; font-size: 10px; color: #a0a0c0; margin: 16px 0 6px; }
+  input {
+    width: 100%; padding: 14px 12px;
+    background: #05070f; color: #4af6ff;
+    border: 2px solid #2a3050;
+    font-family: inherit; font-size: 12px;
+    outline: none;
+  }
+  input:focus { border-color: #4af6ff; box-shadow: 0 0 8px rgba(74,246,255,0.5); }
+  .btns { display: flex; gap: 10px; margin-top: 22px; }
+  button {
+    flex: 1; padding: 14px 10px;
+    font-family: inherit; font-size: 10px;
+    border: 3px solid; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .entrar {
+    background: #4af6ff; color: #0a0a1a; border-color: #4af6ff;
+    box-shadow: 3px 3px 0 #0a2a30;
+  }
+  .entrar:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0a2a30; }
+  .registrar {
+    background: #a06bff; color: #0a0a1a; border-color: #a06bff;
+    box-shadow: 3px 3px 0 #2a1a40;
+  }
+  .registrar:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #2a1a40; }
+  .erro {
+    background: #2a0a0a; border: 2px solid #ff4466; color: #ff8899;
+    padding: 10px; font-size: 9px; margin-top: 16px; text-align: center;
+    line-height: 1.5;
+  }
+  .rodape { text-align: center; font-size: 8px; color: #4a4a6a; margin-top: 24px; }
+  .pixel { position: absolute; width: 6px; height: 6px; background: #4af6ff; }
+  .pixel.tl { top: -3px; left: -3px; }
+  .pixel.tr { top: -3px; right: -3px; background: #a06bff; }
+  .pixel.bl { bottom: -3px; left: -3px; background: #a06bff; }
+  .pixel.br { bottom: -3px; right: -3px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="pixel tl"></div><div class="pixel tr"></div>
+  <div class="pixel bl"></div><div class="pixel br"></div>
+  <h1>REINO SOMBRIO<span>MMORPG</span></h1>
+  <div class="aviso">crie sua conta ou entre</div>
+  <form method="POST">
+    <label>USUARIO</label>
+    <input name="usuario" maxlength="16" autocomplete="username" autofocus
+           pattern="[a-zA-Z0-9_]+" title="Letras, numeros e _">
+    <label>SENHA</label>
+    <input name="senha" type="password" autocomplete="current-password" minlength="4">
+    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+    <div class="btns">
+      <button class="entrar" type="submit" name="acao" value="entrar">Entrar</button>
+      <button class="registrar" type="submit" name="acao" value="registrar">Criar</button>
+    </div>
+  </form>
+  <div class="rodape">v0.1 · feito no Termux</div>
+</div>
+</body></html>

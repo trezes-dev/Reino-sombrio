@@ -1,0 +1,550 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reino Sombrio MMORPG</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#4af6ff">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+body { background:#111; color:#eee; font-family:monospace; padding:15px; max-width:700px; margin:auto; overflow-x:hidden; }
+#topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:6px; flex-wrap:wrap; }
+#topo h1 { margin:0; font-size:16px; color:#4af6ff; }
+#topo .botoes { display:flex; gap:4px; flex-wrap:wrap; }
+#topo button, #topo a { padding:6px 10px; background:#222; border-radius:6px; text-decoration:none; font-size:10px; font-family:inherit; cursor:pointer; border:1px solid; color:#eee; }
+#topo .perfil { color:#a06bff; border-color:#a06bff; }
+#topo .inv { color:#8fff8f; border-color:#8fff8f; }
+#topo .painel { color:#4af6ff; border-color:#4af6ff; }
+#topo .sair { color:#ff5566; border-color:#ff5566; }
+#hud { background:#222; padding:10px; border-radius:8px; margin-bottom:8px; font-size:14px; }
+#log { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:8px; min-height:24px; color:#8f8; margin-bottom:8px; font-size:12px; }
+#area-mapa { position: relative; margin: 10px 0; display: flex; justify-content: center; }
+#mapa { display:grid; gap:1px; }
+.tile { width:28px; height:28px; background-size:cover; background-position:center; image-rendering:pixelated; background-color:#111; position:relative; border-radius:2px; }
+.tile.grama { background-image: url('/static/sprites/grama.png'); }
+.tile.agua { background-image: url('/static/sprites/agua.png'); }
+.tile.areia { background-image: url('/static/sprites/areia.png'); }
+.tile.pedra { background-image: url('/static/sprites/pedra.png'); }
+.tile.arvore { background-image: url('/static/sprites/arvore.png'); }
+.sprite { position:absolute; inset:0; background-size:cover; background-position:center; image-rendering:pixelated; }
+.sprite.monstro { background-image: url('/static/sprites/monstro.png'); }
+.sprite.npc { background-image: url('/static/sprites/npc.png'); }
+.sprite.player { background-image: url('/static/sprites/player.png'); box-shadow:0 0 8px #4af6ff; border-radius:2px; z-index:2; }
+.sprite.player.classe-cavaleiro { background-image: url('/static/sprites/player-cavaleiro.png'); }
+.sprite.player.classe-arqueiro { background-image: url('/static/sprites/player-arqueiro.png'); }
+.sprite.player.classe-mago { background-image: url('/static/sprites/player-mago.png'); }
+.sprite.outro { border-radius:2px; box-shadow:0 0 6px #fff; z-index:2; }
+#minimapa-box { position:absolute; top:4px; right:4px; background:rgba(10,10,20,0.9); border:2px solid #4af6ff; padding:4px; border-radius:4px; z-index:5; box-shadow:0 0 10px rgba(74,246,255,0.5); }
+#minimapa-box .titulo { font-size:7px; color:#4af6ff; text-align:center; margin-bottom:2px; letter-spacing:1px; }
+#minimapa { display:grid; gap:0; }
+#minimapa .mt { width:4px; height:4px; background:#1a1a2a; }
+#minimapa .mt.g { background:#2d5a1e; }
+#minimapa .mt.a { background:#1a4a7a; }
+#minimapa .mt.s { background:#e0cc80; }
+#minimapa .mt.p { background:#555; }
+#minimapa .mt.t { background:#1a3a10; }
+#minimapa .mt.player { background:#4af; box-shadow:0 0 3px #4af; }
+#minimapa .mt.monstro { background:#c33; }
+#minimapa .mt.npc { background:#fc3; }
+#minimapa .mt.outro { background:#fff; }
+.ctrl { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:200px; margin:auto; }
+.ctrl button { padding:12px; font-size:18px; background:#333; color:#eee; border:1px solid #555; border-radius:8px; }
+.ctrl button:active { background:#4af; }
+#hotbar { display:flex; gap:5px; justify-content:center; margin:10px 0; flex-wrap:wrap; }
+.slot { width:44px; height:44px; background:#1a1a2a; border:2px solid #444; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:20px; position:relative; cursor:pointer; user-select:none; }
+.slot .qtd { position:absolute; bottom:2px; right:3px; font-size:9px; color:#fff; background:#000; padding:1px 3px; border-radius:3px; font-weight:bold; }
+.slot.arma { border-color:#c33; }
+.slot.pocao { border-color:#4f4; }
+.slot.escudo { border-color:#48f; }
+.slot.armadura { border-color:#a6f; }
+.slot.vazio-item { opacity:0.4; filter:grayscale(1); }
+#chat-btn { position:fixed; bottom:15px; right:15px; z-index:20; width:50px; height:50px; border-radius:50%; background:#4af6ff; color:#0a0a1a; border:none; font-size:22px; box-shadow:0 0 15px rgba(74,246,255,0.6); cursor:pointer; }
+#chat-btn .badge-msg { position:absolute; top:-6px; right:-6px; background:#ff5566; color:#fff; border-radius:12px; min-width:22px; height:22px; line-height:22px; font-size:11px; padding:0 5px; display:none; }
+.modal { position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:40; display:none; flex-direction:column; padding:15px; overflow-y:auto; }
+.modal.aberto { display:flex; }
+.modal-topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
+.modal-topo h2 { margin:0; font-size:14px; color:#4af6ff; }
+.modal-topo button { padding:6px 12px; background:#222; color:#ff5566; border:1px solid #ff5566; border-radius:6px; cursor:pointer; font-family:inherit; font-size:11px; }
+#chat-msgs { flex:1; overflow-y:auto; background:#0a0a14; border:1px solid #2a2a3a; border-radius:8px; padding:10px; font-size:12px; line-height:1.6; }
+#chat-msgs .msg { margin-bottom:4px; word-wrap:break-word; }
+#chat-msgs .msg.sis { color:#8fff8f; font-style:italic; }
+#chat-msgs .msg .hora { color:#555; font-size:10px; }
+#chat-input-area { display:flex; gap:6px; margin-top:8px; }
+#chat-input { flex:1; padding:10px; background:#05070f; color:#4af6ff; border:2px solid #2a3050; font-family:inherit; font-size:12px; border-radius:6px; outline:none; }
+#chat-input-area button { padding:10px 16px; background:#4af6ff; color:#0a0a1a; border:none; border-radius:6px; font-family:inherit; font-size:12px; cursor:pointer; font-weight:bold; }
+.inv-wrapper { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+#inv-grid { display:grid; grid-template-columns:repeat(5, 56px); gap:6px; }
+.inv-slot { width:56px; height:56px; background:#1a1a2a; border:2px solid #444; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:24px; position:relative; cursor:pointer; user-select:none; }
+.inv-slot:hover { border-color:#4af6ff; }
+.inv-slot .qtd { position:absolute; bottom:2px; right:3px; font-size:10px; color:#fff; background:#000; padding:1px 3px; border-radius:3px; font-weight:bold; }
+.inv-slot.arma { border-color:#c33; }
+.inv-slot.pocao { border-color:#4f4; }
+.inv-slot.escudo { border-color:#48f; }
+.inv-slot.armadura { border-color:#a6f; }
+.inv-slot.vazio-item { opacity:0.4; filter:grayscale(1); }
+#inv-info { background:#0a0a14; border:1px solid #2a2a3a; border-radius:8px; padding:12px; flex:1; min-width:220px; max-width:280px; font-size:12px; }
+#inv-info h3 { margin:0 0 10px; font-size:13px; color:#4af6ff; }
+#inv-info .linha { padding:6px 0; border-bottom:1px dashed #2a2a4a; display:flex; justify-content:space-between; }
+#inv-info .lbl { color:#888; }
+#inv-info .val { color:#eee; font-weight:bold; }
+#perfil-card { max-width:450px; width:100%; margin:auto; background:#10142a; border:3px solid #a06bff; box-shadow:0 0 0 3px #10142a, 0 0 0 6px #4af6ff, 0 0 25px rgba(160,107,255,0.5); padding:16px; border-radius:4px; }
+#perfil-painel h2 { text-align:center; font-size:14px; color:#4af6ff; text-shadow:2px 2px 0 #a06bff; margin:0 0 12px; }
+#perfil-painel .ptop { display:flex; gap:12px; margin-bottom:12px; border-bottom:1px solid #2a2a4a; padding-bottom:12px; }
+#perfil-avatar { width:64px; height:64px; background:#05070f center/cover; border:2px solid #4af6ff; border-radius:8px; image-rendering:pixelated; flex-shrink:0; }
+#perfil-nome { font-size:13px; font-weight:bold; margin-bottom:4px; }
+#perfil-classe { font-size:11px; color:#a0a0c0; }
+#perfil-cargo { display:inline-block; font-size:9px; padding:2px 6px; border:1px solid; border-radius:3px; margin-top:4px; }
+.perfil-barra { height:16px; background:#05070f; border:2px solid #2a3050; border-radius:3px; overflow:hidden; position:relative; margin:4px 0; }
+.perfil-barra .fill { height:100%; transition:width 0.4s; }
+.perfil-barra .txt { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; color:#fff; text-shadow:1px 1px 2px #000; font-weight:bold; }
+.perfil-barra.hp .fill { background:linear-gradient(90deg, #c33, #ff5566); }
+.perfil-barra.xp .fill { background:linear-gradient(90deg, #4af6ff, #a06bff); }
+.perfil-secao { font-size:10px; color:#a06bff; margin:10px 0 4px; letter-spacing:1px; border-bottom:1px solid #2a2a4a; padding-bottom:3px; }
+.perfil-linha { display:flex; justify-content:space-between; font-size:11px; padding:4px 0; }
+.perfil-linha .lbl { color:#888; }
+.perfil-linha .val { color:#eee; font-weight:bold; }
+#picker { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:60; display:none; flex-direction:column; padding:20px; overflow-y:auto; }
+#picker.aberto { display:flex; }
+#picker h3 { color:#4af6ff; margin:0 0 12px; font-size:14px; }
+#picker .item-pick { background:#1a1a2a; border:2px solid #444; border-radius:8px; padding:10px; margin-bottom:6px; display:flex; align-items:center; gap:10px; cursor:pointer; font-size:12px; }
+#picker .item-pick:hover { border-color:#4af6ff; }
+#picker .item-pick .em { font-size:22px; }
+#picker .item-pick .info { flex:1; }
+#picker .item-pick .nome { font-weight:bold; }
+#picker .item-pick .tipo { color:#888; font-size:10px; }
+#picker .botoes { display:flex; gap:6px; margin-top:12px; }
+#picker button { flex:1; padding:12px; background:#222; color:#eee; border:1px solid #555; border-radius:6px; font-family:inherit; font-size:12px; cursor:pointer; }
+#picker .limpar { border-color:#ff5566; color:#ff5566; }
+#loading-screen { position:fixed; inset:0; z-index:9999; background:#000 url('/static/loading/fundo.jpg') center/cover no-repeat; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:30px 20px; transition:opacity 0.8s; }
+#loading-screen.saindo { opacity:0; pointer-events:none; }
+#loading-screen h1 { font-family:monospace; font-size:20px; color:#4af6ff; text-shadow:0 0 20px #4af6ff, 2px 2px 0 #0a0a1a; letter-spacing:3px; margin:0; text-align:center; }
+#loading-screen h1 span { display:block; font-size:11px; color:#a06bff; margin-top:6px; letter-spacing:6px; }
+#loading-bottom { width:100%; max-width:400px; }
+#loading-msg { font-family:monospace; font-size:11px; color:#8fff8f; text-align:center; margin-bottom:10px; min-height:16px; text-shadow:0 0 8px #8fff8f; }
+#loading-bar { width:100%; height:20px; background:#0a0a1a; border:3px solid #4af6ff; border-radius:3px; box-shadow:0 0 15px rgba(74,246,255,0.5); position:relative; overflow:hidden; }
+#loading-fill { height:100%; width:0%; background:linear-gradient(90deg, #4af6ff, #a06bff); transition:width 0.3s; }
+#loading-pct { font-family:monospace; font-size:10px; color:#4af6ff; text-align:center; margin-top:6px; }
+@media (orientation: landscape) {
+  body { max-width:100%; padding:8px; }
+  #hud { font-size:12px; padding:6px; }
+  #log { font-size:11px; padding:6px; }
+  .wrap { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+  .tile { width:22px; height:22px; }
+  #minimapa .mt { width:3px; height:3px; }
+  .ctrl button { padding:10px; font-size:16px; }
+  .slot { width:38px; height:38px; font-size:17px; }
+  .inv-slot { width:44px; height:44px; font-size:20px; }
+  #inv-grid { grid-template-columns:repeat(5, 44px); }
+  #chat-btn { width:44px; height:44px; font-size:20px; bottom:10px; right:10px; }
+}
+</style></head><body>
+
+<div id="loading-screen">
+  <h1>REINO SOMBRIO<span>MMORPG</span></h1>
+  <div id="loading-bottom">
+    <div id="loading-msg">acordando o dragão...</div>
+    <div id="loading-bar"><div id="loading-fill"></div></div>
+    <div id="loading-pct">0%</div>
+  </div>
+</div>
+
+<div id="topo">
+  <h1>Reino Sombrio</h1>
+  <div class="botoes">
+    <button class="perfil" onclick="abrirPerfil()">👤 Perfil</button>
+    <button class="inv" onclick="abrirInv()">🎒 Inv</button>
+    <a class="painel" href="/painel">🛡️ Painel</a>
+    <a class="sair" href="/logout">Sair</a>
+  </div>
+</div>
+
+<div id="hud">carregando...</div>
+<div id="log">Use as setas para andar</div>
+
+<div class="wrap">
+  <div id="area-mapa">
+    <div id="minimapa-box">
+      <div class="titulo">MAPA</div>
+      <div id="minimapa"></div>
+    </div>
+    <div id="mapa"></div>
+  </div>
+  <div>
+    <div class="ctrl">
+      <div></div><button onclick="mover('cima')">↑</button><div></div>
+      <button onclick="mover('esq')">←</button>
+      <button onclick="descansar()">💤</button>
+      <button onclick="mover('dir')">→</button>
+      <div></div><button onclick="mover('baixo')">↓</button><div></div>
+    </div>
+  </div>
+</div>
+
+<div id="hotbar"></div>
+
+<button id="chat-btn" onclick="chatAbrir()">💬<span class="badge-msg" id="chat-badge">0</span></button>
+
+<div id="chat-painel" class="modal">
+  <div class="modal-topo"><h2>💬 Chat Global</h2><button onclick="chatFechar()">Fechar</button></div>
+  <div id="chat-msgs"></div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="msg ou /ajuda" maxlength="200" onkeydown="if(event.key==='Enter')chatEnviar()">
+    <button onclick="chatEnviar()">Enviar</button>
+  </div>
+</div>
+
+<div id="inv-painel" class="modal">
+  <div class="modal-topo"><h2>🎒 Inventário</h2><button onclick="fecharInv()">Fechar</button></div>
+  <div class="inv-wrapper">
+    <div id="inv-grid"></div>
+    <div id="inv-info"><h3>Selecione um item</h3><div id="inv-info-conteudo"></div></div>
+  </div>
+</div>
+
+<div id="perfil-painel" class="modal">
+  <div id="perfil-card">
+    <h2>👤 PERSONAGEM</h2>
+    <div class="ptop">
+      <div id="perfil-avatar"></div>
+      <div>
+        <div id="perfil-nome"></div>
+        <div id="perfil-classe"></div>
+        <div id="perfil-cargo"></div>
+      </div>
+    </div>
+    <div class="perfil-secao">❤️ VIDA</div>
+    <div class="perfil-barra hp"><div class="fill" id="perfil-hp-fill"></div><div class="txt" id="perfil-hp-txt">0/0</div></div>
+    <div class="perfil-secao">⭐ EXPERIÊNCIA</div>
+    <div class="perfil-barra xp"><div class="fill" id="perfil-xp-fill"></div><div class="txt" id="perfil-xp-txt">0/0</div></div>
+    <div class="perfil-secao">📊 ATRIBUTOS</div>
+    <div class="perfil-linha"><span class="lbl">Nível</span><span class="val" id="perfil-nivel">-</span></div>
+    <div class="perfil-linha"><span class="lbl">Classe</span><span class="val" id="perfil-classe-txt">-</span></div>
+    <div class="perfil-linha"><span class="lbl">Ouro</span><span class="val" id="perfil-ouro">-</span></div>
+    <div class="perfil-linha"><span class="lbl">Posição</span><span class="val" id="perfil-pos">-</span></div>
+    <div class="perfil-secao">⚔️ COMBATE</div>
+    <div class="perfil-linha"><span class="lbl">Arma</span><span class="val" id="perfil-arma">-</span></div>
+    <div class="perfil-linha"><span class="lbl">Bônus</span><span class="val" id="perfil-bonus">-</span></div>
+    <div class="perfil-linha"><span class="lbl">Dano</span><span class="val" id="perfil-dano">-</span></div>
+    <button style="width:100%;padding:12px;margin-top:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer" onclick="fecharPerfil()">FECHAR</button>
+  </div>
+</div>
+
+<div id="picker">
+  <h3>Escolher item para o slot</h3>
+  <div id="picker-lista"></div>
+  <div class="botoes">
+    <button class="limpar" onclick="limparSlot()">Limpar slot</button>
+    <button onclick="fecharPicker()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+let J = null;
+let ultimoId = 0;
+let naoLidas = 0;
+let chatAberto = false;
+let slotEditando = -1;
+const EMOJI_ITEM = {"Espada Curta":"🗡️","Adaga Enferrujada":"🔪","Cajado":"🪄","Arco Curto":"🏹","Escudo de Madeira":"🛡️","Armadura de Couro":"🥼","Poção de Cura":"🧪"};
+const EMOJI_CLASSE = {"cavaleiro":"⚔️ Cavaleiro","arqueiro":"🏹 Arqueiro","mago":"🔮 Mago"};
+const SPRITE_CLASSE = {"cavaleiro":"/static/sprites/player-cavaleiro.png","arqueiro":"/static/sprites/player-arqueiro.png","mago":"/static/sprites/player-mago.png"};
+const TIPO_MM = {"grama":"g","agua":"a","areia":"s","pedra":"p","arvore":"t"};
+function emojiDe(n) { return EMOJI_ITEM[n] || "📦"; }
+
+function render(j) {
+  if (!j) return;
+  J = j;
+  const view = j.view, metade = j.metade;
+  const cor = j.cargo_cor || j.cor || '#4af';
+  const badge = j.cargo_badge ? j.cargo_badge + ' ' : '';
+  const arma = j.arma ? ` (${j.arma[0]} +${j.arma[1]})` : '';
+  document.getElementById("hud").innerHTML = `${badge}<span style="color:${cor};font-weight:bold;text-shadow:0 0 8px ${cor}">${j.nome}</span> [Nv ${j.nivel}] | HP ${j.hp}/${j.hp_max} | XP ${j.xp} | Ouro ${j.ouro}${arma}`;
+
+  const mapa = document.getElementById("mapa");
+  mapa.style.gridTemplateColumns = `repeat(${view}, 1fr)`;
+  mapa.innerHTML = "";
+  const monsSet = new Set(j.monstros.map(m => m[2] + "," + m[3]));
+  const npcsSet = new Set(j.npcs.map(n => n[2] + "," + n[3]));
+  const outrosMap = {};
+  j.outros.forEach(o => { outrosMap[o.x + "," + o.y] = o; });
+
+  for (let vy = 0; vy < view; vy++) {
+    for (let vx = 0; vx < view; vx++) {
+      const mx = j.x - metade + vx;
+      const my = j.y - metade + vy;
+      const tipo = (j.viewport[vy] && j.viewport[vy][vx]) || "agua";
+      const d = document.createElement("div");
+      d.className = "tile " + tipo;
+      if (mx === j.x && my === j.y) {
+        const sp = document.createElement("div");
+        sp.className = "sprite player classe-" + (j.classe || "cavaleiro");
+        d.appendChild(sp);
+      } else if (monsSet.has(mx + "," + my)) {
+        const sp = document.createElement("div"); sp.className = "sprite monstro"; d.appendChild(sp);
+      } else if (npcsSet.has(mx + "," + my)) {
+        const sp = document.createElement("div"); sp.className = "sprite npc"; d.appendChild(sp);
+      } else if (outrosMap[mx + "," + my]) {
+        const o = outrosMap[mx + "," + my];
+        const sp = document.createElement("div"); sp.className = "sprite outro"; sp.style.background = o.cor; d.appendChild(sp);
+      }
+      mapa.appendChild(d);
+    }
+  }
+
+  // MINI MAPA (recorte 21x21 ao redor do player)
+  const raio = 12;
+  const mm = document.getElementById("minimapa");
+  mm.style.gridTemplateColumns = `repeat(${raio*2+1}, 4px)`;
+  mm.innerHTML = "";
+  for (let yy = -raio; yy <= raio; yy++) {
+    for (let xx = -raio; xx <= raio; xx++) {
+      const mx = j.x + xx, my = j.y + yy;
+      const d = document.createElement("div");
+      d.className = "mt";
+      if (mx === j.x && my === j.y) d.className += " player";
+      else if (monsSet.has(mx + "," + my)) d.className += " monstro";
+      else if (npcsSet.has(mx + "," + my)) d.className += " npc";
+      else if (outrosMap[mx + "," + my]) d.className += " outro";
+      else {
+        let tipo = "a";
+        if (xx >= -metade && xx <= metade && yy >= -metade && yy <= metade) {
+          const vx = xx + metade, vy = yy + metade;
+          if (j.viewport[vy] && j.viewport[vy][vx]) tipo = j.viewport[vy][vx];
+        }
+        d.className += " " + (TIPO_MM[tipo] || "a");
+      }
+      mm.appendChild(d);
+    }
+  }
+
+  // HOTBAR
+  const hb = document.getElementById("hotbar");
+  hb.innerHTML = "";
+  const itens = j.inv || [];
+  const invPorId = {};
+  itens.forEach(x => { invPorId[x[4]] = { nome: x[0], tipo: x[1], bonus: x[2], qtd: x[3], id: x[4] }; });
+  let hbIds = j.hotbar || [];
+  if (!hbIds.some(x => x > 0)) { hbIds = itens.slice(0, 6).map(x => x[4]); while (hbIds.length < 6) hbIds.push(0); }
+  for (let i = 0; i < 6; i++) {
+    const slot = document.createElement("div");
+    const itemId = hbIds[i] || 0;
+    if (itemId && invPorId[itemId]) {
+      const it = invPorId[itemId];
+      const semQtd = it.qtd <= 0;
+      slot.className = "slot " + it.tipo + (semQtd ? " vazio-item" : "");
+      slot.innerHTML = `${emojiDe(it.nome)}<span class="qtd">${it.qtd}</span>`;
+    } else { slot.className = "slot"; slot.textContent = "·"; }
+    slot.onclick = () => abrirPicker(i);
+    hb.appendChild(slot);
+  }
+}
+
+async function carregar() { const r = await fetch("/api/estado"); render(await r.json()); }
+async function mover(dir) { const r = await fetch("/api/mover/" + dir); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+async function descansar() { const r = await fetch("/api/descansar"); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+async function pocao() { const r = await fetch("/api/pocao"); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+
+// PICKER HOTBAR
+function abrirPicker(idx) {
+  slotEditando = idx;
+  const lista = document.getElementById("picker-lista");
+  lista.innerHTML = "";
+  const itens = (J && J.inv) || [];
+  if (!itens.length) lista.innerHTML = "<div style='color:#666;padding:20px;text-align:center'>Inventário vazio</div>";
+  itens.forEach(x => {
+    const div = document.createElement("div");
+    div.className = "item-pick";
+    div.innerHTML = `<span class="em">${emojiDe(x[0])}</span><div class="info"><div class="nome">${x[0]}</div><div class="tipo">${x[1]} +${x[2]} · x${x[3]}</div></div>`;
+    div.onclick = () => escolherItem(x[4]);
+    lista.appendChild(div);
+  });
+  document.getElementById("picker").classList.add("aberto");
+}
+function fecharPicker() { document.getElementById("picker").classList.remove("aberto"); slotEditando = -1; }
+async function escolherItem(itemId) {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice();
+  while (hb.length < 6) hb.push(0);
+  for (let i = 0; i < 6; i++) if (i !== slotEditando && hb[i] === itemId) hb[i] = 0;
+  hb[slotEditando] = itemId;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  fecharPicker();
+  const r = await fetch("/api/estado"); render(await r.json());
+}
+async function limparSlot() {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice();
+  while (hb.length < 6) hb.push(0);
+  hb[slotEditando] = 0;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  fecharPicker();
+  const r = await fetch("/api/estado"); render(await r.json());
+}
+
+// INVENTÁRIO
+function abrirInv() {
+  const grid = document.getElementById("inv-grid");
+  grid.innerHTML = "";
+  const itens = (J && J.inv) || [];
+  for (let i = 0; i < 30; i++) {
+    const slot = document.createElement("div");
+    if (i < itens.length) {
+      const [nome, tipo, bonus, qtd, id] = itens[i];
+      const semQtd = qtd <= 0;
+      slot.className = "inv-slot " + tipo + (semQtd ? " vazio-item" : "");
+      slot.innerHTML = `${emojiDe(nome)}<span class="qtd">${qtd}</span>`;
+      slot.onclick = () => selecionarInv(itens[i]);
+    } else { slot.className = "inv-slot"; slot.style.opacity = "0.3"; }
+    grid.appendChild(slot);
+  }
+  document.getElementById("inv-info-conteudo").innerHTML = "<div style='color:#666;font-size:11px'>Toque num item</div>";
+  document.getElementById("inv-painel").classList.add("aberto");
+}
+function fecharInv() { document.getElementById("inv-painel").classList.remove("aberto"); }
+function selecionarInv(item) {
+  const [nome, tipo, bonus, qtd, id] = item;
+  const info = document.getElementById("inv-info-conteudo");
+  info.innerHTML = `
+    <div style="font-size:26px;text-align:center;margin-bottom:8px">${emojiDe(nome)}</div>
+    <div class="linha"><span class="lbl">Nome</span><span class="val">${nome}</span></div>
+    <div class="linha"><span class="lbl">Tipo</span><span class="val">${tipo}</span></div>
+    <div class="linha"><span class="lbl">Bônus</span><span class="val">+${bonus}</span></div>
+    <div class="linha"><span class="lbl">Qtd</span><span class="val">${qtd}</span></div>
+    <div style="margin-top:12px;display:flex;gap:6px">
+      ${tipo === "pocao" ? `<button style="flex:1;padding:10px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold" onclick="usarPocaoInv()">Usar</button>` : ""}
+      <button style="flex:1;padding:10px;background:#333;color:#eee;border:1px solid #555;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer" onclick="porNaHotbar(${id})">Hotbar</button>
+    </div>`;
+}
+async function usarPocaoInv() { await pocao(); abrirInv(); }
+async function porNaHotbar(itemId) {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice();
+  while (hb.length < 6) hb.push(0);
+  let colocado = false;
+  for (let i = 0; i < 6; i++) { if (hb[i] === 0) { hb[i] = itemId; colocado = true; break; } }
+  if (!colocado) hb[0] = itemId;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  const r = await fetch("/api/estado"); render(await r.json()); fecharInv();
+}
+
+// PERFIL
+function abrirPerfil() {
+  if (!J) return;
+  const j = J;
+  const classe = j.classe || "cavaleiro";
+  document.getElementById("perfil-avatar").style.backgroundImage = `url('${SPRITE_CLASSE[classe]}')`;
+  const cor = j.cargo_cor || "#4af6ff";
+  const nome = document.getElementById("perfil-nome");
+  nome.textContent = (j.cargo_badge ? j.cargo_badge + ' ' : '') + j.nome;
+  nome.style.color = cor;
+  document.getElementById("perfil-classe").innerHTML = `<b>${EMOJI_CLASSE[classe] || classe}</b>`;
+  const cargo = document.getElementById("perfil-cargo");
+  cargo.textContent = (j.cargo_nome || "Player").toUpperCase();
+  cargo.style.color = cor; cargo.style.borderColor = cor;
+  const hpPct = Math.max(0, Math.min(100, (j.hp / j.hp_max) * 100));
+  document.getElementById("perfil-hp-fill").style.width = hpPct + "%";
+  document.getElementById("perfil-hp-txt").textContent = `${j.hp} / ${j.hp_max}`;
+  const xpProx = j.nivel * 50;
+  const xpPct = Math.min(100, (j.xp / xpProx) * 100);
+  document.getElementById("perfil-xp-fill").style.width = xpPct + "%";
+  document.getElementById("perfil-xp-txt").textContent = `${j.xp} / ${xpProx}`;
+  document.getElementById("perfil-nivel").textContent = "Nv " + j.nivel;
+  document.getElementById("perfil-classe-txt").textContent = EMOJI_CLASSE[classe] || classe;
+  document.getElementById("perfil-ouro").textContent = j.ouro;
+  document.getElementById("perfil-pos").textContent = `(${j.x}, ${j.y})`;
+  const arma = j.arma ? j.arma[0] : "Punhos";
+  const bonus = j.arma ? j.arma[1] : 0;
+  document.getElementById("perfil-arma").textContent = arma;
+  document.getElementById("perfil-bonus").textContent = "+" + bonus;
+  document.getElementById("perfil-dano").textContent = (8 + bonus) + " ~ " + (15 + bonus);
+  document.getElementById("perfil-painel").classList.add("aberto");
+}
+function fecharPerfil() { document.getElementById("perfil-painel").classList.remove("aberto"); }
+
+// CHAT
+function chatAbrir() {
+  chatAberto = true;
+  document.getElementById("chat-painel").classList.add("aberto");
+  naoLidas = 0;
+  document.getElementById("chat-badge").style.display = "none";
+  setTimeout(() => document.getElementById("chat-input").focus(), 100);
+  carregarChat(true);
+}
+function chatFechar() { chatAberto = false; document.getElementById("chat-painel").classList.remove("aberto"); }
+async function carregarChat(forcar) {
+  const r = await fetch("/api/chat/mensagens?desde=" + ultimoId);
+  const novas = await r.json();
+  if (!novas.length && !forcar) return;
+  const box = document.getElementById("chat-msgs");
+  const eu = J ? J.id : null;
+  if (forcar) { box.innerHTML = ""; ultimoId = 0; }
+  if (forcar && ultimoId === 0) {
+    const r2 = await fetch("/api/chat/mensagens?desde=0");
+    const todas = await r2.json();
+    todas.forEach(m => { ultimoId = m.id; box.appendChild(montarMsg(m, eu)); });
+  } else {
+    novas.forEach(m => {
+      ultimoId = m.id;
+      box.appendChild(montarMsg(m, eu));
+      if (!chatAberto) {
+        naoLidas++;
+        const b = document.getElementById("chat-badge");
+        b.textContent = naoLidas > 9 ? "9+" : naoLidas;
+        b.style.display = "block";
+      }
+    });
+  }
+  box.scrollTop = box.scrollHeight;
+}
+function montarMsg(m, eu) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  if (m.canal === "sistema") { div.classList.add("sis"); div.innerHTML = `<span class="hora">${hora}</span> ${m.texto}`; return div; }
+  const badge = m.badge ? m.badge + ' ' : '';
+  div.innerHTML = `<span class="hora">${hora}</span> ${badge}<span style="color:${m.cor};font-weight:bold">${m.nome}</span>: ${escapeHtml(m.texto)}`;
+  return div;
+}
+function escapeHtml(t) { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+async function chatEnviar() {
+  const inp = document.getElementById("chat-input");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = "";
+  await fetch("/api/chat/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto: texto})});
+  await carregarChat(false);
+}
+
+// POLLING
+setInterval(async () => { try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 2000);
+setInterval(() => { carregarChat(false); }, 2000);
+
+// LOADING
+(function() {
+  const frases = ["acordando o dragão...", "invocando monstros...", "carregando mapa...", "afinando as espadas...", "abrindo os portões...", "Reino Sombrio te aguarda..."];
+  let pct = 0, idx = 0;
+  const fill = document.getElementById("loading-fill");
+  const pctEl = document.getElementById("loading-pct");
+  const msgEl = document.getElementById("loading-msg");
+  const troca = setInterval(() => { idx = (idx + 1) % frases.length; msgEl.textContent = frases[idx]; }, 900);
+  const avanca = setInterval(() => {
+    pct += Math.random() * 12 + 4;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + "%";
+    pctEl.textContent = Math.floor(pct) + "%";
+    if (pct >= 100) { clearInterval(avanca); clearInterval(troca); msgEl.textContent = "entrando no reino..."; }
+  }, 250);
+  window._fecharLoading = function() {
+    pct = 100; fill.style.width = "100%"; pctEl.textContent = "100%"; msgEl.textContent = "entrando no reino...";
+    setTimeout(() => {
+      const ls = document.getElementById("loading-screen");
+      if (ls) { ls.classList.add("saindo"); setTimeout(() => ls.remove(), 900); }
+    }, 400);
+  };
+})();
+
+carregar().then(() => { if (window._fecharLoading) setTimeout(window._fecharLoading, 800); })
+          .catch(() => { if (window._fecharLoading) setTimeout(window._fecharLoading, 1500); });
+</script>
+</body></html>
