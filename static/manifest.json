@@ -1,6 +1,7 @@
 {
   "name": "Reino Sombrio MMORPG",
   "short_name": "Reino Sombrio",
+  "description": "MMORPG 2D online com classes, monstros, trocas e chat.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",
