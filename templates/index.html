@@ -519,6 +519,13 @@ async function chatEnviar() {
   const inp = document.getElementById("chat-input");
   const texto = inp.value.trim();
   if (!texto) return;
+  // Comando especial: /console
+  if (texto.toLowerCase() === "/console") {
+    inp.value = "";
+    document.getElementById("chat-painel").classList.remove("aberto");
+    abrirDev();
+    return;
+  }
   inp.value = "";
   await fetch("/api/chat/enviar", {
     method: "POST",
@@ -652,20 +659,26 @@ function abrirPerfil() {
   document.getElementById("perfil-avatar").style.backgroundImage = "url('" + SPRITE_CLASSE[classe] + "')";
   const cor = j.cargo_cor || "#4af6ff";
   document.getElementById("perfil-nome").innerHTML = '<span style="color:' + cor + '">' + (j.cargo_badge||"") + " " + j.nome + '</span>';
-  document.getElementById("perfil-classe").textContent = EMOJI_CLASSE[classe] || classe;
   const cargo = document.getElementById("perfil-cargo");
   cargo.textContent = (j.cargo_nome || "Player").toUpperCase();
   cargo.style.color = cor;
   cargo.style.borderColor = cor;
+  document.getElementById("perfil-id").textContent = "#" + (j.jid || j.id || "?");
+  document.getElementById("perfil-guilda").textContent = j.guilda || "Sem guilda";
   document.getElementById("perfil-nivel").textContent = "Nv " + j.nivel;
-  document.getElementById("perfil-classe-txt").textContent = EMOJI_CLASSE[classe] || classe;
-  document.getElementById("perfil-ouro").textContent = j.ouro;
-  document.getElementById("perfil-pos").textContent = "(" + j.x + ", " + j.y + ")";
-  const arma = j.arma ? j.arma[0] : "Punhos";
-  const bonus = j.arma ? j.arma[1] : 0;
-  document.getElementById("perfil-arma").textContent = arma;
-  document.getElementById("perfil-dano").textContent = (8 + bonus) + " ~ " + (15 + bonus);
+  document.getElementById("perfil-classe").textContent = EMOJI_CLASSE[classe] || classe;
+  // Lista todas as classes conhecidas (por enquanto só a atual)
+  const lista = document.getElementById("perfil-classes-lista");
+  const classes = ["cavaleiro","arqueiro","mago"];
+  lista.innerHTML = '<div style="font-size:10px;color:#888;margin-bottom:6px">CLASSES DISPONÍVEIS</div>' +
+    classes.map(c => {
+      const ativo = c === classe;
+      return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:' + (ativo ? '#4af6ff' : '#555') + '">' +
+        '<span>' + (EMOJI_CLASSE[c] || c) + '</span>' +
+        '<span>' + (ativo ? 'ATIVA' : '—') + '</span></div>';
+    }).join("");
   document.getElementById("perfil-painel").style.display = "flex";
+  if (typeof mudarTabPerfil === "function") mudarTabPerfil("personagem");
 }
 function fecharPerfil() { document.getElementById("perfil-painel").style.display = "none"; }
 </script>
@@ -760,17 +773,68 @@ function fecharConfig() { document.getElementById("config-painel").style.display
 function sairJogo() { if (confirm("Sair da conta mesmo?")) window.location.href = "/logout"; }
 </script>
 
-<div id="perfil-painel" style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;flex-direction:column;padding:20px;overflow-y:auto;font-family:monospace">
-  <div style="max-width:400px;width:100%;margin:auto;background:#10142a;border:3px solid #a06bff;padding:16px;border-radius:6px">
-    <h2 style="text-align:center;font-size:14px;color:#4af6ff;margin:0 0 12px">👤 PERSONAGEM</h2>
-    <div style="display:flex;gap:12px;margin-bottom:12px">
-      <div id="perfil-avatar" style="width:64px;height:64px;background:#05070f center/cover;border:2px solid #4af6ff;border-radius:6px;image-rendering:pixelated"></div>
-      <div style="flex:1">
-        <div id="perfil-nome" style="font-size:13px;font-weight:bold;margin-bottom:4px"></div>
-        <div id="perfil-classe" style="font-size:11px;color:#aaa"></div>
-        <div id="perfil-cargo" style="display:inline-block;font-size:9px;padding:2px 6px;border:1px solid;border-radius:3px;margin-top:4px"></div>
+<div id="perfil-painel" style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;flex-direction:column;padding:12px;overflow-y:auto;font-family:monospace">
+  <div style="max-width:420px;width:100%;margin:auto;background:#10142a;border:3px solid #a06bff;border-radius:6px;overflow:hidden">
+    <div style="display:flex;background:#0a0a14;border-bottom:2px solid #a06bff">
+      <button id="tab-personagem" onclick="mudarTabPerfil('personagem')" style="flex:1;padding:10px 4px;background:transparent;color:#a06bff;border:none;border-bottom:2px solid #a06bff;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">👤 PERSONAGEM</button>
+      <button id="tab-guilda" onclick="mudarTabPerfil('guilda')" style="flex:1;padding:10px 4px;background:transparent;color:#666;border:none;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">🛡️ GUILDA</button>
+      <button id="tab-amigos" onclick="mudarTabPerfil('amigos')" style="flex:1;padding:10px 4px;background:transparent;color:#666;border:none;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">👥 AMIGOS</button>
+    </div>
+
+    <div id="tab-conteudo-personagem" style="padding:16px">
+      <div style="display:flex;gap:14px;margin-bottom:16px;align-items:center">
+        <div id="perfil-avatar" style="width:80px;height:80px;background:#05070f center/cover;border:2px solid #4af6ff;border-radius:8px;image-rendering:pixelated;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div id="perfil-nome" style="font-size:15px;font-weight:bold;margin-bottom:6px"></div>
+          <div id="perfil-cargo" style="display:inline-block;font-size:10px;padding:2px 8px;border:1px solid;border-radius:3px"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #2a2a4a;border-bottom:1px solid #2a2a4a">
+        <span style="color:#888;font-size:12px">🆔 ID</span>
+        <span id="perfil-id" style="color:#a06bff;font-weight:bold;font-size:13px">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+        <span style="color:#888;font-size:12px">⭐ Nível</span>
+        <span id="perfil-nivel" style="color:#ffd700;font-weight:bold;font-size:13px">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+        <span style="color:#888;font-size:12px">⚔️ Classe</span>
+        <span id="perfil-classe" style="color:#eee;font-weight:bold;font-size:13px">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+        <span style="color:#888;font-size:12px">🛡️ Guilda</span>
+        <span id="perfil-guilda" style="color:#c9a227;font-weight:bold;font-size:13px">Sem guilda</span>
       </div>
     </div>
+
+    <div id="tab-conteudo-guilda" style="padding:16px;display:none"></div>
+    <div id="tab-conteudo-amigos" style="padding:16px;display:none"></div>
+
+    <div style="padding:12px;border-top:2px solid #a06bff">
+      <button onclick="fecharPerfil()" style="width:100%;padding:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
+    </div>
+  </div>
+</div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #2a2a4a;border-bottom:1px solid #2a2a4a">
+      <span style="color:#888;font-size:12px">🆔 ID</span>
+      <span id="perfil-id" style="color:#a06bff;font-weight:bold;font-size:13px">-</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+      <span style="color:#888;font-size:12px">🛡️ Guilda</span>
+      <span id="perfil-guilda" style="color:#4af6ff;font-weight:bold;font-size:13px">Sem guilda</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+      <span style="color:#888;font-size:12px">⭐ Nível</span>
+      <span id="perfil-nivel" style="color:#ffd700;font-weight:bold;font-size:13px">-</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a">
+      <span style="color:#888;font-size:12px">⚔️ Classe</span>
+      <span id="perfil-classe" style="color:#eee;font-weight:bold;font-size:13px">-</span>
+    </div>
+    <div id="perfil-classes-lista" style="margin-top:12px;padding-top:12px;border-top:1px dashed #2a2a4a"></div>
+    <button onclick="fecharPerfil()" style="width:100%;padding:12px;margin-top:16px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
+  </div>
+</div>
     <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Nivel</span><span id="perfil-nivel" style="color:#eee;font-weight:bold">-</span></div>
     <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Classe</span><span id="perfil-classe-txt" style="color:#eee;font-weight:bold">-</span></div>
     <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Ouro</span><span id="perfil-ouro" style="color:#eee;font-weight:bold">-</span></div>
@@ -780,4 +844,277 @@ function sairJogo() { if (confirm("Sair da conta mesmo?")) window.location.href 
     <button onclick="fecharPerfil()" style="width:100%;padding:12px;margin-top:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
   </div>
 </div>
+<script>const PERM_CARGO = {
+  "curar":        ["ajudante","mod","admin","dev"],
+  "teleporte":    ["ajudante","mod","admin","dev"],
+  "mobs_listar":  ["mod","admin","dev"],
+  "mobs_limpar":  ["mod","admin","dev"],
+  "spawn_perto":  ["mod","admin","dev"],
+  "banir":        ["mod","admin","dev"],
+  "dar_vip":      ["admin","dev"],
+  "ouro":         ["admin","dev"],
+  "nivel":        ["admin","dev"],
+  "dano":         ["admin","dev"],
+  "speed":        ["admin","dev"],
+  "guilda_set":   ["admin","dev"],
+  "god":          ["dev"],
+};
+function podeFazer(acao) {
+  if (!J) return false;
+  const perms = PERM_CARGO[acao] || ["dev"];
+  return perms.includes(J.cargo);
+}
+function aplicarPermissoes() {
+  document.querySelectorAll("#dev-painel [data-perm]").forEach(el => {
+    const perms = el.getAttribute("data-perm").split(",");
+    el.style.display = (J && perms.includes(J.cargo)) ? "" : "none";
+  });
+}
+function abrirDev() {
+  const el = document.getElementById("dev-painel");
+  if (!el) { alert("ERRO: painel dev nao existe no HTML"); return; }
+  el.style.display = "flex";
+  aplicarPermissoes();
+}
+function fecharDev() {
+  document.getElementById("dev-painel").style.display = "none";
+}
+async function devAcao(acao, valor, extra) {
+  const payload = { acao: acao, valor: valor };
+  if (extra) Object.assign(payload, extra);
+  const r = await fetch("/api/dev/acao", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
+  const j = await r.json();
+  document.getElementById("dev-msg").textContent = j.msg || j.erro || "feito";
+  const s = await fetch("/api/estado");
+  render(await s.json());
+}
+</script>
+
+<script>
+function mudarTabPerfil(tab) {
+  document.getElementById("tab-conteudo-personagem").style.display = tab === "personagem" ? "block" : "none";
+  document.getElementById("tab-conteudo-guilda").style.display = tab === "guilda" ? "block" : "none";
+  document.getElementById("tab-conteudo-amigos").style.display = tab === "amigos" ? "block" : "none";
+  ["personagem","guilda","amigos"].forEach(t => {
+    const btn = document.getElementById("tab-" + t);
+    if (t === tab) {
+      btn.style.color = "#a06bff";
+      btn.style.borderBottom = "2px solid #a06bff";
+    } else {
+      btn.style.color = "#666";
+      btn.style.borderBottom = "none";
+    }
+  });
+  if (tab === "guilda") atualizarGuild();
+  if (tab === "amigos") atualizarAmigos();
+}
+
+async function atualizarGuild() {
+  const r = await fetch("/api/guild/info");
+  const j = await r.json();
+  const cont = document.getElementById("tab-conteudo-guilda");
+  if (!j.tem) {
+    const ra = await fetch("/api/guild/acoes");
+    const a = await ra.json();
+    if (!a.pode_criar) {
+      cont.innerHTML = '<div style="text-align:center;color:#888;padding:20px;font-size:12px">Voce precisa ser VIP+ para criar uma guilda</div>';
+      return;
+    }
+    if (a.ja_lidera) {
+      cont.innerHTML = '<div style="text-align:center;color:#888;padding:20px;font-size:12px">Voce ja lidera uma guilda</div>';
+      return;
+    }
+    cont.innerHTML = '<div style="text-align:center;color:#888;font-size:12px;padding:16px 0">Voce nao esta em nenhuma guilda</div>' +
+      '<div style="font-size:11px;color:#888;margin-bottom:6px">Nome da guilda:</div>' +
+      '<input id="guild-criar-nome" placeholder="ex: Reborn" style="width:100%;padding:10px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;margin-bottom:8px">' +
+      '<button onclick="acaoGuild(\'criar\', document.getElementById(\'guild-criar-nome\').value)" style="width:100%;padding:10px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">Criar guilda</button>' +
+      '<div id="guild-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#c9a227;margin-top:8px"></div>';
+    return;
+  }
+  const eu_sou_lider = j.cargo_meu === "lider";
+  let h = '<div style="text-align:center;margin-bottom:12px">' +
+    '<div style="font-size:17px;color:#c9a227;font-weight:bold">' + j.nome + '</div>' +
+    '<div style="font-size:11px;color:#888;margin-top:4px">Lider: ' + j.lider + '</div>' +
+    '<div style="font-size:11px;color:#4af6ff;margin-top:2px">Voce: ' + j.cargo_meu + '</div>' +
+    '</div>' +
+    '<div style="font-size:11px;color:#888;margin-bottom:6px">MEMBROS (' + j.membros.length + ')</div>';
+  j.membros.forEach(m => {
+    const s = m.online ? "🟢" : "⚫";
+    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;margin-bottom:3px;font-size:11px">' +
+      '<span>' + s + ' ' + m.nome + '</span>' +
+      '<span style="color:#888">' + m.cargo_guilda + '</span></div>';
+  });
+  h += '<div style="font-size:11px;color:#888;margin:10px 0 4px">ACOES</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">';
+  if (eu_sou_lider) {
+    h += '<button onclick="acaoGuildConvidar()" style="padding:6px;background:#333;color:#fff;border:1px solid #4af6ff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+ Convidar</button>';
+    h += '<button onclick="acaoGuild(\'renomear\', prompt(\'Novo nome (5M):\'))" style="padding:6px;background:#333;color:#fff;border:1px solid #ffd700;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Renomear</button>';
+  }
+  h += '<button onclick="acaoGuild(\'sair\')" style="grid-column:1/-1;padding:6px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Sair da guilda</button>';
+  h += '</div>';
+  h += '<div id="guild-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#c9a227;margin-top:8px"></div>';
+  // CHAT DA GUILDA
+  h += '<div style="font-size:11px;color:#888;margin:12px 0 4px">💬 CHAT DA GUILDA</div>';
+  h += '<div id="guild-chat-msgs" style="background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;padding:8px;height:180px;overflow-y:auto;font-size:11px;line-height:1.5"></div>';
+  h += '<div style="display:flex;gap:4px;margin-top:4px">';
+  h += '<input id="guild-chat-input" placeholder="mensagem" maxlength="200" onkeydown="if(event.key===\'Enter\')enviarGuildChat()" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px">';
+  h += '<button onclick="enviarGuildChat()" style="padding:8px 14px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">Enviar</button>';
+  h += '</div>';
+  cont.innerHTML = h;
+  ultimoGuildMsg = 0;
+  carregarGuildChat();
+  if (!window._guildChatInterval) {
+    window._guildChatInterval = setInterval(() => {
+      if (document.getElementById("guild-chat-msgs")) carregarGuildChat();
+    }, 2500);
+  }
+}
+
+let ultimoGuildMsg = 0;
+async function carregarGuildChat() {
+  const box = document.getElementById("guild-chat-msgs");
+  if (!box) return;
+  const r = await fetch("/api/chat/guild?desde=" + ultimoGuildMsg);
+  const novas = await r.json();
+  if (!novas.length) return;
+  novas.forEach(m => {
+    ultimoGuildMsg = m.id;
+    const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement("div");
+    div.innerHTML = '<span style="color:#555">' + hora + '</span> <span style="color:' + m.cor + ';font-weight:bold">' + (m.badge||"") + ' ' + m.nome + '</span>: ' + m.texto.replace(/</g,"&lt;");
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+async function enviarGuildChat() {
+  const inp = document.getElementById("guild-chat-input");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = "";
+  await fetch("/api/chat/guild/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto: texto})});
+  await carregarGuildChat();
+}
+
+async function acaoGuild(acao, valor) {
+  if (valor === null || valor === undefined) return;
+  const r = await fetch("/api/guild/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:acao, nome:valor})});
+  const j = await r.json();
+  const m = document.getElementById("guild-msg");
+  if (m) m.textContent = j.msg;
+  setTimeout(atualizarGuild, 500);
+}
+async function acaoGuildConvidar() {
+  const nome = prompt("Nome do jogador:");
+  if (nome) acaoGuild("convidar", nome);
+}
+
+async function atualizarAmigos() {
+  const r = await fetch("/api/amigos/listar");
+  const j = await r.json();
+  const cont = document.getElementById("tab-conteudo-amigos");
+  let h = '<div style="font-size:11px;color:#888;margin-bottom:6px">PEDIR AMIZADE</div>';
+  h += '<div style="display:flex;gap:4px;margin-bottom:12px">';
+  h += '<input id="amigo-add-nome" placeholder="nome do jogador" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px">';
+  h += '<button onclick="acaoAmigoAdd()" style="padding:8px 14px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">+</button>';
+  h += '</div>';
+  if (j.pedidos.length) {
+    h += '<div style="font-size:11px;color:#ffd700;margin-bottom:6px">PEDIDOS PENDENTES</div>';
+    j.pedidos.forEach(p => {
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#0a0a14;border:1px solid #ffd700;border-radius:4px;margin-bottom:4px;font-size:11px">' +
+        '<span>' + p.nome + '</span>' +
+        '<button onclick="aceitarAmigo(\'' + p.nome + '\')" style="padding:4px 10px;background:#4f4;color:#0a0a1a;border:none;border-radius:3px;font-family:inherit;font-size:10px;font-weight:bold;cursor:pointer">Aceitar</button></div>';
+    });
+  }
+  h += '<div style="font-size:11px;color:#888;margin:10px 0 4px">AMIGOS (' + j.amigos.length + ')</div>';
+  if (!j.amigos.length) {
+    h += '<div style="text-align:center;color:#555;font-size:11px;padding:20px">Sem amigos ainda</div>';
+  } else {
+    j.amigos.forEach(a => {
+      const s = a.online ? "🟢" : "⚫";
+      h += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;margin-bottom:4px;font-size:11px">' +
+        '<span style="cursor:pointer;flex:1" onclick="abrirChatPriv(' + a.id + ', \'' + a.nome + '\')">' + s + ' ' + a.nome + ' 💬</span>' +
+        '<button onclick="removerAmigo(\'' + a.nome + '\')" style="padding:2px 8px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:3px;font-family:inherit;font-size:10px;cursor:pointer">✕</button></div>';
+    });
+  }
+  h += '<div id="amigo-msg" style="display:none;background:#0a0a14;border:1px solid #4af6ff;border-radius:4px;padding:6px;font-size:11px;color:#4af6ff;margin-top:8px"></div>';
+  // PAINEL DE CHAT PRIVADO
+  h += '<div id="priv-painel" style="display:none;margin-top:12px">';
+  h += '<div id="priv-titulo" style="font-size:11px;color:#4af6ff;margin-bottom:4px"></div>';
+  h += '<div id="priv-chat-msgs" style="background:#0a0a14;border:1px solid #4af6ff;border-radius:4px;padding:8px;height:180px;overflow-y:auto;font-size:11px;line-height:1.5"></div>';
+  h += '<div style="display:flex;gap:4px;margin-top:4px">';
+  h += '<input id="priv-chat-input" placeholder="mensagem" maxlength="200" onkeydown="if(event.key===\'Enter\')enviarPrivChat()" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px">';
+  h += '<button onclick="enviarPrivChat()" style="padding:8px 14px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">Enviar</button>';
+  h += '</div></div>';
+  cont.innerHTML = h;
+}
+
+let ultimoPrivMsg = 0;
+let privAmigoAtual = null;
+async function abrirChatPriv(amigoId, nome) {
+  privAmigoAtual = amigoId;
+  ultimoPrivMsg = 0;
+  document.getElementById("priv-titulo").textContent = "💬 Chat com " + nome;
+  document.getElementById("priv-painel").style.display = "block";
+  document.getElementById("priv-chat-msgs").innerHTML = "";
+  await carregarPrivChat();
+  if (!window._privChatInterval) {
+    window._privChatInterval = setInterval(() => {
+      if (privAmigoAtual) carregarPrivChat();
+    }, 2500);
+  }
+}
+async function carregarPrivChat() {
+  if (!privAmigoAtual) return;
+  const box = document.getElementById("priv-chat-msgs");
+  if (!box) return;
+  const r = await fetch("/api/chat/privado/" + privAmigoAtual + "?desde=" + ultimoPrivMsg);
+  const novas = await r.json();
+  if (!novas.length) return;
+  novas.forEach(m => {
+    ultimoPrivMsg = m.id;
+    const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement("div");
+    div.innerHTML = '<span style="color:#555">' + hora + '</span> <span style="color:' + m.cor + ';font-weight:bold">' + (m.badge||"") + ' ' + m.nome + '</span>: ' + m.texto.replace(/</g,"&lt;");
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+async function enviarPrivChat() {
+  if (!privAmigoAtual) return;
+  const inp = document.getElementById("priv-chat-input");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = "";
+  await fetch("/api/chat/privado/" + privAmigoAtual + "/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto: texto})});
+  await carregarPrivChat();
+}
+async function acaoAmigoAdd() {
+  const nome = document.getElementById("amigo-add-nome").value.trim();
+  if (!nome) return;
+  const r = await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"add", nome:nome})});
+  const j = await r.json();
+  const m = document.getElementById("amigo-msg");
+  if (m) m.textContent = j.msg;
+  setTimeout(atualizarAmigos, 500);
+}
+async function aceitarAmigo(nome) {
+  const r = await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"aceitar", nome:nome})});
+  const j = await r.json();
+  const m = document.getElementById("amigo-msg");
+  if (m) m.textContent = j.msg;
+  setTimeout(atualizarAmigos, 500);
+}
+async function removerAmigo(nome) {
+  if (!confirm("Remover " + nome + "?")) return;
+  const r = await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"remover", nome:nome})});
+  const j = await r.json();
+  const m = document.getElementById("amigo-msg");
+  if (m) m.textContent = j.msg;
+  setTimeout(atualizarAmigos, 500);
+}
+
+// Remove as funções antigas abrirGuild/fecharGuild/atualizarGuild (que vinham do patch antigo)
+
+
+</script>
 </body></html>

@@ -166,6 +166,16 @@ def estado(jid):
         FROM jogador WHERE id != ? AND ultimo_visto > ? AND personagem_criado = 1""",
         (jid, agora - 15)).fetchall()
     c.close()
+    # Busca guilda do jogador na tabela nova
+    try:
+        c2 = con()
+        g_row = c2.execute("""SELECT g.nome FROM guilda_membros gm
+            JOIN guildas g ON g.id = gm.guilda_id
+            WHERE gm.jogador_id = ?""", (jid,)).fetchone()
+        guilda_nome = g_row[0] if g_row else None
+        c2.close()
+    except Exception:
+        guilda_nome = None
     info = CARGOS.get(cargo or "player", CARGOS["player"])
     lista_outros = []
     for o in outros_rows:
@@ -205,7 +215,7 @@ def estado(jid):
             "xp": xp, "nivel": nivel, "hp_max": hp_max, "cor": cor,
             "arma": arma, "inv": inv, "monstros": mons_vp, "npcs": npcs_vp, "outros": outros_vp,
             "viewport": vp, "view": VIEW, "metade": metade,
-            "hotbar": hotbar_ids, "W_MAP": W_MAP, "H_MAP": H_MAP}
+            "hotbar": hotbar_ids, "guilda": guilda_nome, "W_MAP": W_MAP, "H_MAP": H_MAP}
 
 def posicao_livre(c, px, py):
     for _ in range(50):
@@ -765,6 +775,228 @@ def api_chat_enviar():
     salvar_mensagem(jid, texto, "global")
     return jsonify({"ok": True})
 
+def guilda_do_jogador(c, jid):
+    r = c.execute("""SELECT g.id, g.nome, gm.cargo FROM guilda_membros gm
+        JOIN guildas g ON g.id = gm.guilda_id WHERE gm.jogador_id = ?""", (jid,)).fetchone()
+    return r
+
+def guilda_lidera(c, jid):
+    return c.execute("SELECT id, nome FROM guildas WHERE lider_id = ?", (jid,)).fetchone()
+
+def cmd_guild(jid, args):
+    c = con()
+    meu = c.execute("SELECT nome_personagem, nome, cargo, ouro FROM jogador WHERE id=?", (jid,)).fetchone()
+    meu_nome = meu[0] or meu[1]
+    meu_cargo = meu[2]
+    meu_ouro = meu[3]
+    def resp(t):
+        c.close()
+        return t
+    if not args:
+        g = guilda_do_jogador(c, jid)
+        if g:
+            return resp("Voce esta na guilda [" + g[1] + "] como " + g[2])
+        return resp("Uso: /guild criar|convidar|aceitar|sair|info|membros|renomear|expulsar")
+    sub = args[0].lower()
+    resto = args[1:]
+    if sub == "criar":
+        if not cargo_ok(meu_cargo, "vip"):
+            return resp("Precisa ser VIP+ para criar guilda")
+        if not resto:
+            return resp("Uso: /guild criar <nome>")
+        nome_g = " ".join(resto)[:20].strip()
+        if len(nome_g) < 3:
+            return resp("Nome muito curto")
+        if guilda_lidera(c, jid):
+            return resp("Voce ja lidera uma guilda")
+        if guilda_do_jogador(c, jid):
+            return resp("Saia da guilda atual primeiro")
+        ex = c.execute("SELECT id FROM guildas WHERE nome=?", (nome_g,)).fetchone()
+        if ex:
+            return resp("Ja existe guilda com esse nome")
+        c.execute("INSERT INTO guildas (nome, lider_id) VALUES (?, ?)", (nome_g, jid))
+        gid = c.execute("SELECT last_insert_rowid()").fetchone()[0]
+        c.execute("INSERT INTO guilda_membros (guilda_id, jogador_id, cargo) VALUES (?, ?, 'lider')", (gid, jid))
+        c.commit()
+        return resp("Guilda [" + nome_g + "] criada! Voce e o lider")
+    if sub == "convidar":
+        g = guilda_do_jogador(c, jid)
+        if not g:
+            return resp("Voce nao esta em guilda")
+        if g[2] != "lider":
+            return resp("So o lider convida")
+        if not resto:
+            return resp("Uso: /guild convidar <nome>")
+        alvo = c.execute("SELECT id, nome_personagem, nome FROM jogador WHERE nome_personagem=? OR nome=?", (resto[0], resto[0])).fetchone()
+        if not alvo:
+            return resp("Jogador nao encontrado")
+        if alvo[0] == jid:
+            return resp("Nao pode se convidar")
+        if guilda_do_jogador(c, alvo[0]):
+            return resp("Ja esta em uma guilda")
+        c.execute("INSERT INTO convites_guilda (guilda_id, convidado_id) VALUES (?, ?)", (g[0], alvo[0]))
+        c.commit()
+        msg_privada(alvo[0], "Convite para [" + g[1] + "]. Use /guild aceitar")
+        return resp("Convite enviado para " + (alvo[1] or alvo[2]))
+    if sub == "aceitar":
+        conv = c.execute("SELECT cg.id, cg.guilda_id, g.nome FROM convites_guilda cg JOIN guildas g ON g.id=cg.guilda_id WHERE cg.convidado_id=? ORDER BY cg.id DESC LIMIT 1", (jid,)).fetchone()
+        if not conv:
+            return resp("Sem convites pendentes")
+        if guilda_do_jogador(c, jid):
+            return resp("Voce ja esta em guilda")
+        c.execute("INSERT INTO guilda_membros (guilda_id, jogador_id, cargo) VALUES (?, ?, 'membro')", (conv[1], jid))
+        c.execute("DELETE FROM convites_guilda WHERE id=?", (conv[0],))
+        c.commit()
+        return resp("Entrou na guilda [" + conv[2] + "]")
+    if sub == "sair":
+        g = guilda_do_jogador(c, jid)
+        if not g:
+            return resp("Voce nao esta em guilda")
+        if g[2] == "lider":
+            membros = c.execute("SELECT jogador_id FROM guilda_membros WHERE guilda_id=? AND jogador_id!=?", (g[0], jid)).fetchall()
+            if not membros:
+                c.execute("DELETE FROM guilda_membros WHERE guilda_id=?", (g[0],))
+                c.execute("DELETE FROM guildas WHERE id=?", (g[0],))
+                c.commit()
+                return resp("Guilda [" + g[1] + "] dissolvida")
+            novo = membros[0][0]
+            c.execute("UPDATE guildas SET lider_id=? WHERE id=?", (novo, g[0]))
+            c.execute("UPDATE guilda_membros SET cargo='lider' WHERE guilda_id=? AND jogador_id=?", (g[0], novo))
+            c.execute("DELETE FROM guilda_membros WHERE guilda_id=? AND jogador_id=?", (g[0], jid))
+            c.commit()
+            return resp("Saiu. Lideranca transferida")
+        c.execute("DELETE FROM guilda_membros WHERE guilda_id=? AND jogador_id=?", (g[0], jid))
+        c.commit()
+        return resp("Saiu da guilda [" + g[1] + "]")
+    if sub == "info":
+        g = guilda_do_jogador(c, jid)
+        if not g:
+            return resp("Voce nao esta em guilda")
+        lider = c.execute("SELECT nome_personagem, nome FROM jogador WHERE id=(SELECT lider_id FROM guildas WHERE id=?)", (g[0],)).fetchone()
+        nm = c.execute("SELECT COUNT(*) FROM guilda_membros WHERE guilda_id=?", (g[0],)).fetchone()[0]
+        return resp("[" + g[1] + "] | Lider: " + (lider[0] or lider[1]) + " | " + str(nm) + " membros | Voce: " + g[2])
+    if sub == "membros":
+        g = guilda_do_jogador(c, jid)
+        if not g:
+            return resp("Voce nao esta em guilda")
+        mems = c.execute("SELECT j.nome_personagem, j.nome, gm.cargo FROM guilda_membros gm JOIN jogador j ON j.id=gm.jogador_id WHERE gm.guilda_id=? ORDER BY gm.cargo DESC", (g[0],)).fetchall()
+        return resp("Membros: " + " | ".join([(m[0] or m[1]) + "(" + m[2] + ")" for m in mems]))
+    if sub == "renomear":
+        g = guilda_do_jogador(c, jid)
+        if not g:
+            return resp("Voce nao esta em guilda")
+        if g[2] != "lider":
+            return resp("So o lider renomeia")
+        if not resto:
+            return resp("Uso: /guild renomear <nome>")
+        novo_nome = " ".join(resto)[:20].strip()
+        if len(novo_nome) < 3:
+            return resp("Nome muito curto")
+        ex = c.execute("SELECT id FROM guildas WHERE nome=?", (novo_nome,)).fetchone()
+        if ex:
+            return resp("Ja existe guilda com esse nome")
+        CUSTO = 5000000
+        if meu_ouro < CUSTO:
+            return resp("Custa 5.000.000 ouro. Voce tem " + str(meu_ouro))
+        c.execute("UPDATE jogador SET ouro = ouro - ? WHERE id=?", (CUSTO, jid))
+        c.execute("UPDATE guildas SET nome=? WHERE id=?", (novo_nome, g[0]))
+        c.commit()
+        return resp("Renomeada para [" + novo_nome + "]. -5.000.000 ouro")
+    if sub == "expulsar":
+        g = guilda_do_jogador(c, jid)
+        if not g or g[2] != "lider":
+            return resp("So o lider expulsa")
+        if not resto:
+            return resp("Uso: /guild expulsar <nome>")
+        alvo = c.execute("SELECT id, nome_personagem, nome FROM jogador WHERE nome_personagem=? OR nome=?", (resto[0], resto[0])).fetchone()
+        if not alvo:
+            return resp("Nao encontrado")
+        if alvo[0] == jid:
+            return resp("Use /guild sair")
+        c.execute("DELETE FROM guilda_membros WHERE guilda_id=? AND jogador_id=?", (g[0], alvo[0]))
+        c.commit()
+        msg_privada(alvo[0], "Expulso da guilda [" + g[1] + "]")
+        return resp("Expulsou " + (alvo[1] or alvo[2]))
+    return resp("Sub-comando desconhecido")
+
+
+def cmd_amigo(jid, args):
+    c = con()
+    meu = c.execute("SELECT nome_personagem, nome FROM jogador WHERE id=?", (jid,)).fetchone()
+    meu_nome = meu[0] or meu[1]
+    def resp(t):
+        c.close()
+        return t
+    if not args:
+        return resp("Uso: /amigo add|aceitar|remover|listar")
+    sub = args[0].lower()
+    resto = args[1:]
+    if sub == "add":
+        if not resto:
+            return resp("Uso: /amigo add <nome>")
+        alvo = c.execute("SELECT id, nome_personagem, nome FROM jogador WHERE nome_personagem=? OR nome=?", (resto[0], resto[0])).fetchone()
+        if not alvo:
+            return resp("Jogador nao encontrado")
+        if alvo[0] == jid:
+            return resp("Nao pode se adicionar")
+        # Verifica se ja tem amizade
+        ex = c.execute("SELECT id, status FROM amizades WHERE (solicitante_id=? AND destinatario_id=?) OR (solicitante_id=? AND destinatario_id=?)", (jid, alvo[0], alvo[0], jid)).fetchone()
+        if ex:
+            if ex[1] == "aceita":
+                return resp("Ja sao amigos")
+            else:
+                return resp("Pedido pendente")
+        c.execute("INSERT INTO amizades (solicitante_id, destinatario_id, status) VALUES (?, ?, 'pendente')", (jid, alvo[0]))
+        c.commit()
+        msg_privada(alvo[0], meu_nome + " quer ser seu amigo. Use /amigo aceitar " + meu_nome)
+        return resp("Pedido enviado para " + (alvo[1] or alvo[2]))
+    if sub == "aceitar":
+        if not resto:
+            return resp("Uso: /amigo aceitar <nome>")
+        quem = c.execute("SELECT id, nome_personagem, nome FROM jogador WHERE nome_personagem=? OR nome=?", (resto[0], resto[0])).fetchone()
+        if not quem:
+            return resp("Nao encontrado")
+        ped = c.execute("SELECT id FROM amizades WHERE solicitante_id=? AND destinatario_id=? AND status='pendente'", (quem[0], jid)).fetchone()
+        if not ped:
+            return resp("Sem pedido pendente desse jogador")
+        c.execute("UPDATE amizades SET status='aceita' WHERE id=?", (ped[0],))
+        c.commit()
+        msg_privada(quem[0], meu_nome + " aceitou seu pedido de amizade!")
+        return resp("Agora voce e amigo de " + (quem[1] or quem[2]))
+    if sub == "remover":
+        if not resto:
+            return resp("Uso: /amigo remover <nome>")
+        alvo = c.execute("SELECT id, nome_personagem, nome FROM jogador WHERE nome_personagem=? OR nome=?", (resto[0], resto[0])).fetchone()
+        if not alvo:
+            return resp("Nao encontrado")
+        c.execute("DELETE FROM amizades WHERE (solicitante_id=? AND destinatario_id=?) OR (solicitante_id=? AND destinatario_id=?)", (jid, alvo[0], alvo[0], jid))
+        c.commit()
+        return resp("Removeu " + (alvo[1] or alvo[2]) + " dos amigos")
+    if sub == "listar" or sub == "lista":
+        rows = c.execute("""SELECT j.id, j.nome_personagem, j.nome, j.cargo, j.ultimo_visto
+            FROM amizades a
+            JOIN jogador j ON (j.id = a.solicitante_id OR j.id = a.destinatario_id)
+            WHERE a.status='aceita' AND (a.solicitante_id=? OR a.destinatario_id=?) AND j.id != ?""",
+            (jid, jid, jid)).fetchall()
+        if not rows:
+            return resp("Sem amigos ainda. Use /amigo add <nome>")
+        agora = time.time()
+        partes = []
+        for r in rows:
+            online = (r[4] and (agora - r[4]) < 15)
+            simbolo = "🟢" if online else "⚫"
+            partes.append(simbolo + " " + (r[1] or r[2]))
+        return resp("Amigos: " + " | ".join(partes))
+    if sub == "pedidos" or sub == "solicitacoes":
+        rows = c.execute("""SELECT j.nome_personagem, j.nome FROM amizades a
+            JOIN jogador j ON j.id=a.solicitante_id
+            WHERE a.destinatario_id=? AND a.status='pendente'""", (jid,)).fetchall()
+        if not rows:
+            return resp("Sem pedidos pendentes")
+        return resp("Pedidos de: " + " | ".join([(r[0] or r[1]) for r in rows]))
+    return resp("Sub-comando /amigo " + sub + " desconhecido")
+
+
 def executar_comando(jid, texto):
     c = con()
     eu = c.execute("SELECT nome_personagem, nome, cargo FROM jogador WHERE id=?", (jid,)).fetchone()
@@ -778,7 +1010,14 @@ def executar_comando(jid, texto):
     cmd = partes[0].lower() if partes else ""
     args = partes[1:]
     if cmd in ("ajuda", "help"):
-        msg_privada(jid, "[bases] /ajuda /online /me /ping /perfil /onde /troca /sql")
+        linhas = ["[bases] /ajuda /online /me /ping /perfil /onde /troca"]
+        if cargo_ok(meu_cargo, "mod"):
+            linhas.append("[mod] /kick /mute /limpar /dar")
+        if cargo_ok(meu_cargo, "admin"):
+            linhas.append("[admin] /spawn /limpamobs /cargo /hp /nivel")
+        if meu_cargo == "dev":
+            linhas.append("[dev] /sql /console")
+        msg_privada(jid, " | ".join(linhas))
         return
     if cmd == "ping":
         msg_privada(jid, "pong"); return
@@ -811,6 +1050,14 @@ def executar_comando(jid, texto):
         return
     if cmd == "troca":
         resultado = executar_troca(jid, args)
+        msg_privada(jid, resultado)
+        return
+    if cmd in ("guild", "guilda", "g"):
+        resultado = cmd_guild(jid, args)
+        msg_privada(jid, resultado)
+        return
+    if cmd in ("amigo", "amigos", "amiga"):
+        resultado = cmd_amigo(jid, args)
         msg_privada(jid, resultado)
         return
     if cmd == "sql":
@@ -938,6 +1185,198 @@ def api_atacar():
     c.close()
     return jsonify({"msg": msg, "estado": estado(jid)})
 
+
+
+
+@app.route("/api/guild/info")
+@login_obrigatorio
+def api_guild_info():
+    jid = session["jogador_id"]
+    c = con()
+    g = guilda_do_jogador(c, jid)
+    if not g:
+        c.close()
+        return jsonify({"tem": False})
+    lider = c.execute("SELECT nome_personagem, nome FROM jogador WHERE id=(SELECT lider_id FROM guildas WHERE id=?)", (g[0],)).fetchone()
+    mems = c.execute("""SELECT j.id, j.nome_personagem, j.nome, j.cargo, gm.cargo, j.ultimo_visto
+        FROM guilda_membros gm JOIN jogador j ON j.id=gm.jogador_id
+        WHERE gm.guilda_id=? ORDER BY gm.cargo DESC, j.nivel DESC""", (g[0],)).fetchall()
+    agora = time.time()
+    lista = []
+    for m in mems:
+        lista.append({
+            "id": m[0], "nome": m[1] or m[2], "cargo_player": m[3],
+            "cargo_guilda": m[4],
+            "online": m[5] and (agora - m[5]) < 15
+        })
+    c.close()
+    return jsonify({
+        "tem": True, "id": g[0], "nome": g[1], "cargo_meu": g[2],
+        "lider": lider[0] or lider[1] if lider else "?",
+        "membros": lista
+    })
+
+@app.route("/api/guild/acoes")
+@login_obrigatorio
+def api_guild_acoes():
+    jid = session["jogador_id"]
+    c = con()
+    g = guilda_do_jogador(c, jid)
+    c.close()
+    pode_criar = False
+    c = con()
+    meu = c.execute("SELECT cargo FROM jogador WHERE id=?", (jid,)).fetchone()
+    if meu and cargo_ok(meu[0], "vip"):
+        pode_criar = True
+    ja_lidera = bool(guilda_lidera(c, jid))
+    c.close()
+    return jsonify({"pode_criar": pode_criar, "ja_lidera": ja_lidera})
+
+@app.route("/api/amigos/listar")
+@login_obrigatorio
+def api_amigos_listar():
+    jid = session["jogador_id"]
+    c = con()
+    rows = c.execute("""SELECT j.id, j.nome_personagem, j.nome, j.cargo, j.ultimo_visto
+        FROM amizades a JOIN jogador j ON (j.id = a.solicitante_id OR j.id = a.destinatario_id)
+        WHERE a.status='aceita' AND (a.solicitante_id=? OR a.destinatario_id=?) AND j.id != ?""",
+        (jid, jid, jid)).fetchall()
+    agora = time.time()
+    amigos = []
+    for r in rows:
+        amigos.append({"id": r[0], "nome": r[1] or r[2], "cargo": r[3],
+                       "online": r[4] and (agora - r[4]) < 15})
+    # pedidos pendentes
+    ped = c.execute("""SELECT j.id, j.nome_personagem, j.nome FROM amizades a
+        JOIN jogador j ON j.id=a.solicitante_id
+        WHERE a.destinatario_id=? AND a.status='pendente'""", (jid,)).fetchall()
+    pedidos = [{"id": p[0], "nome": p[1] or p[2]} for p in ped]
+    c.close()
+    return jsonify({"amigos": amigos, "pedidos": pedidos})
+
+@app.route("/api/guild/acao", methods=["POST"])
+@login_obrigatorio
+def api_guild_acao():
+    jid = session["jogador_id"]
+    d = request.get_json() or {}
+    acao = d.get("acao", "")
+    args = []
+    if acao == "criar": args = ["criar", d.get("nome", "")]
+    elif acao == "convidar": args = ["convidar", d.get("nome", "")]
+    elif acao == "aceitar": args = ["aceitar"]
+    elif acao == "sair": args = ["sair"]
+    elif acao == "renomear": args = ["renomear", d.get("nome", "")]
+    elif acao == "expulsar": args = ["expulsar", d.get("nome", "")]
+    r = cmd_guild(jid, args)
+    return jsonify({"msg": r})
+
+@app.route("/api/amigos/acao", methods=["POST"])
+@login_obrigatorio
+def api_amigos_acao():
+    jid = session["jogador_id"]
+    d = request.get_json() or {}
+    acao = d.get("acao", "")
+    args = []
+    if acao == "add": args = ["add", d.get("nome", "")]
+    elif acao == "aceitar": args = ["aceitar", d.get("nome", "")]
+    elif acao == "remover": args = ["remover", d.get("nome", "")]
+    r = cmd_amigo(jid, args)
+    return jsonify({"msg": r})
+
+
+
+@app.route("/api/chat/guild")
+@login_obrigatorio
+def api_chat_guild_msg():
+    jid = session["jogador_id"]
+    desde = request.args.get("desde", 0, type=int)
+    c = con()
+    g = guilda_do_jogador(c, jid)
+    if not g:
+        c.close()
+        return jsonify([])
+    rows = c.execute("""SELECT m.id, m.texto, m.ts, m.jogador_id, j.nome_personagem, j.nome, j.cargo
+        FROM mensagens m LEFT JOIN jogador j ON j.id = m.jogador_id
+        WHERE m.canal='guilda' AND m.guilda_id=? AND m.id > ?
+        ORDER BY m.id ASC LIMIT 50""", (g[0], desde)).fetchall()
+    c.close()
+    out = []
+    for r in rows:
+        info = CARGOS.get(r[6] or "player", CARGOS["player"])
+        out.append({"id": r[0], "texto": r[1], "ts": r[2], "jogador_id": r[3],
+                    "nome": r[4] or r[5] or "?", "cor": info["cor"], "badge": info["badge"]})
+    return jsonify(out)
+
+@app.route("/api/chat/guild/enviar", methods=["POST"])
+@login_obrigatorio
+def api_chat_guild_enviar():
+    jid = session["jogador_id"]
+    d = request.get_json() or {}
+    texto = (d.get("texto") or "").strip()
+    if not texto:
+        return jsonify({"erro": "vazio"})
+    c = con()
+    g = guilda_do_jogador(c, jid)
+    if not g:
+        c.close()
+        return jsonify({"erro": "sem guilda"})
+    row = c.execute("SELECT x, y FROM jogador WHERE id=?", (jid,)).fetchone()
+    x, y = row if row else (None, None)
+    c.execute("INSERT INTO mensagens (jogador_id, canal, texto, x, y, guilda_id) VALUES (?, 'guilda', ?, ?, ?, ?)",
+              (jid, texto[:200], x, y, g[0]))
+    c.commit()
+    c.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/chat/privado/<int:amigo_id>")
+@login_obrigatorio
+def api_chat_priv_msg(amigo_id):
+    jid = session["jogador_id"]
+    desde = request.args.get("desde", 0, type=int)
+    c = con()
+    # Verifica se sao amigos
+    amigo = c.execute("""SELECT 1 FROM amizades WHERE status='aceita'
+        AND ((solicitante_id=? AND destinatario_id=?) OR (solicitante_id=? AND destinatario_id=?))""",
+        (jid, amigo_id, amigo_id, jid)).fetchone()
+    if not amigo:
+        c.close()
+        return jsonify([])
+    rows = c.execute("""SELECT m.id, m.texto, m.ts, m.jogador_id, j.nome_personagem, j.nome, j.cargo
+        FROM mensagens m LEFT JOIN jogador j ON j.id = m.jogador_id
+        WHERE m.canal='privado' AND m.id > ?
+          AND ((m.jogador_id=? AND m.destinatario=?) OR (m.jogador_id=? AND m.destinatario=?))
+        ORDER BY m.id ASC LIMIT 50""",
+        (desde, jid, amigo_id, amigo_id, jid)).fetchall()
+    c.close()
+    out = []
+    for r in rows:
+        info = CARGOS.get(r[6] or "player", CARGOS["player"])
+        out.append({"id": r[0], "texto": r[1], "ts": r[2], "jogador_id": r[3],
+                    "nome": r[4] or r[5] or "?", "cor": info["cor"], "badge": info["badge"]})
+    return jsonify(out)
+
+@app.route("/api/chat/privado/<int:amigo_id>/enviar", methods=["POST"])
+@login_obrigatorio
+def api_chat_priv_enviar(amigo_id):
+    jid = session["jogador_id"]
+    d = request.get_json() or {}
+    texto = (d.get("texto") or "").strip()
+    if not texto:
+        return jsonify({"erro": "vazio"})
+    c = con()
+    amigo = c.execute("""SELECT 1 FROM amizades WHERE status='aceita'
+        AND ((solicitante_id=? AND destinatario_id=?) OR (solicitante_id=? AND destinatario_id=?))""",
+        (jid, amigo_id, amigo_id, jid)).fetchone()
+    if not amigo:
+        c.close()
+        return jsonify({"erro": "nao e amigo"})
+    row = c.execute("SELECT x, y FROM jogador WHERE id=?", (jid,)).fetchone()
+    x, y = row if row else (None, None)
+    c.execute("INSERT INTO mensagens (jogador_id, canal, texto, x, y, destinatario) VALUES (?, 'privado', ?, ?, ?, ?)",
+              (jid, texto[:200], x, y, amigo_id))
+    c.commit()
+    c.close()
+    return jsonify({"ok": True})
 
 if __name__ == "__main__":
     carregar_mapa()
