@@ -6,6 +6,12 @@ log.txt
 *.bkp
 templates/index.html.bkp
 templates/index.html.quebrado
+templates/index.html.antes_redesign
+templates/index.html.backup
+templates/index.html.teste
+templates/index.html.funcional
+templates/index_backup.html
+static/assets/
 patch_*.py
 fix_*.py
 server_antigo.py

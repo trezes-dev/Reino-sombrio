@@ -72,7 +72,7 @@ def gerar_mapa():
             elif n < 0.66:
                 t = "grama"
             elif n < 0.78:
-                t = "arvore"
+                t = "grama"
             else:
                 t = "pedra"
             tiles[(x, y)] = t
@@ -103,7 +103,7 @@ def tile_em(x, y):
     return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
-    return tile_em(x, y) in ("agua", "arvore")
+    return tile_em(x, y) in ("agua",)
 
 def tem_perm(cargo, perm):
     if cargo not in CARGOS:
@@ -635,7 +635,6 @@ def api_mover(dir):
         if subiu:
             msg += "  LEVEL UP! Nv " + str(nivel)
         c.execute("DELETE FROM monstros WHERE id=?", (mid,))
-        nascer_monstro(c, x, y)
     c.execute("UPDATE jogador SET hp=?, ouro=?, xp=?, nivel=?, hp_max=? WHERE id=?",
               (hp, ouro, xp, nivel, hp_max, jid))
     c.commit()
@@ -919,7 +918,6 @@ def cmd_guild(jid, args):
         return resp("Expulsou " + (alvo[1] or alvo[2]))
     return resp("Sub-comando desconhecido")
 
-
 def cmd_amigo(jid, args):
     c = con()
     meu = c.execute("SELECT nome_personagem, nome FROM jogador WHERE id=?", (jid,)).fetchone()
@@ -995,7 +993,6 @@ def cmd_amigo(jid, args):
             return resp("Sem pedidos pendentes")
         return resp("Pedidos de: " + " | ".join([(r[0] or r[1]) for r in rows]))
     return resp("Sub-comando /amigo " + sub + " desconhecido")
-
 
 def executar_comando(jid, texto):
     c = con()
@@ -1134,7 +1131,6 @@ def mod_cargo(alvo, novo_cargo):
     c.execute("UPDATE jogador SET cargo=? WHERE id=?", (novo_cargo, alvo)); c.commit(); c.close()
     return jsonify({"msg": "Cargo -> " + novo_cargo})
 
-
 @app.route("/api/atacar")
 @login_obrigatorio
 def api_atacar():
@@ -1175,7 +1171,6 @@ def api_atacar():
         if subiu:
             msg += "  LEVEL UP! Nv " + str(nivel)
         c.execute("DELETE FROM monstros WHERE id=?", (mid,))
-        nascer_monstro(c, x, y)
     else:
         msg = "Atingiu " + mnome + " com " + str(dano) + " dano (HP: " + str(mhp_novo) + "/" + str(mhp) + ")"
         c.execute("UPDATE monstros SET hp=? WHERE id=?", (mhp_novo, mid))
@@ -1184,9 +1179,6 @@ def api_atacar():
     c.commit()
     c.close()
     return jsonify({"msg": msg, "estado": estado(jid)})
-
-
-
 
 @app.route("/api/guild/info")
 @login_obrigatorio
@@ -1283,8 +1275,6 @@ def api_amigos_acao():
     r = cmd_amigo(jid, args)
     return jsonify({"msg": r})
 
-
-
 @app.route("/api/chat/guild")
 @login_obrigatorio
 def api_chat_guild_msg():
@@ -1380,13 +1370,9 @@ def api_chat_priv_enviar(amigo_id):
 
 if __name__ == "__main__":
     carregar_mapa()
-    # zera monstros pra nascer tudo do zero
     c = con()
     c.execute("DELETE FROM monstros")
     c.commit()
-    for _ in range(20):
-        nascer_monstro(c, 5, 5)
-    c.commit()
     c.close()
-import os
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    import os
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
