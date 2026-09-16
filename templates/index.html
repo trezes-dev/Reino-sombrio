@@ -44,7 +44,26 @@ body { background:#111; color:#eee; font-family:monospace; padding:15px; max-wid
 .monstro { background:#c33; }
 .npc { background:#fc3; box-shadow: 0 0 8px #fc3; }
 .outro { box-shadow: 0 0 8px #fff; border:1px solid #fff; }
-#minimapa-box { position: absolute; top: -10px; right: 0; background: #0a0a14; border: 2px solid #4af6ff; padding: 6px; border-radius: 6px; z-index: 5; box-shadow: 0 0 12px rgba(74,246,255,0.4); }
+#minimapa-box { display: none !important; }
+#minimapa {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+}
+#minimapa .mt {
+  width: 100%;
+  height: 100%;
+}
+#minimapa .mt.g { background: #4a7c2a; }
+#minimapa .mt.a { background: #2a5a8a; }
+#minimapa .mt.s { background: #d4b86a; }
+#minimapa .mt.p { background: #6a6a6a; }
+#minimapa .mt.t { background: #2a5a1a; }
+#minimapa .mt.player { background: #4af6ff; box-shadow: 0 0 4px #4af6ff; }
+#minimapa .mt.monstro { background: #ff4444; }
+#minimapa .mt.npc { background: #ffd700; }
+#minimapa .mt.outro { background: #ffffff; }
 #minimapa-box .titulo { font-size: 8px; color: #4af6ff; margin-bottom: 4px; text-align: center; letter-spacing: 1px; }
 #minimapa { display: grid; gap: 1px; }
 #minimapa .mt { width: 7px; height: 7px; background: #1a1a2a; border-radius: 1px; }
@@ -238,7 +257,38 @@ body { background:#111; color:#eee; font-family:monospace; padding:15px; max-wid
   font-family: inherit; font-size: 12px; font-weight: bold;
   cursor: pointer; letter-spacing: 1px;
 }
+
+#barra-icones {
+  position: fixed;
+  top: 8px; right: 8px;
+  display: flex; gap: 6px;
+  z-index: 100;
+}
+.btn-icone {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(20,15,30,0.9);
+  border: 2px solid #8a7a5a;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  font-family: monospace;
+}
+.btn-icone:active { transform: scale(0.9); }
+
+#perfil-painel.aberto { display: flex !important; flex-direction: column !important; }
+#chat-painel.aberto { display: flex !important; flex-direction: column !important; }
+#perfil-painel, #chat-painel { z-index: 300 !important; }
 </style></head><body>
+<div id="barra-icones">
+  <button class="btn-icone" onclick="abrirMapa()">🌍</button>
+  <button class="btn-icone" onclick="abrirPerfil()">👤</button>
+  <button class="btn-icone" onclick="chatAbrir()">💬</button>
+  <button class="btn-icone" onclick="abrirConfig()">⚙️</button>
+</div>
+
 <div id="loading-screen">
   <h1>REINO SOMBRIO<span>MMORPG</span></h1>
   <div id="loading-bottom">
@@ -253,8 +303,7 @@ body { background:#111; color:#eee; font-family:monospace; padding:15px; max-wid
   <h1>Reino Sombrio</h1>
   <div class="botoes">
     <a class="painel" href="/painel">🛡️ Painel</a>
-    <a class="sair" href="/logout">Sair</a>
-  </div>
+    </div>
 </div>
 
 <div id="hud">carregando...</div>
@@ -282,9 +331,7 @@ body { background:#111; color:#eee; font-family:monospace; padding:15px; max-wid
 <button class="full" onclick="pocao()">🧪 Usar pocao</button>
 <div id="inv">Inventario...</div>
 
-<button id="chat-btn" onclick="chatAbrir()">
-  💬<span class="badge-msg" id="chat-badge">0</span>
-</button>
+
 
 <div id="chat-painel">
   <div id="chat-topo">
@@ -602,41 +649,135 @@ function abrirPerfil() {
   if (!J) return;
   const j = J;
   const classe = j.classe || "cavaleiro";
-  document.getElementById("perfil-avatar").style.backgroundImage = `url('${SPRITE_CLASSE[classe] || SPRITE_CLASSE.cavaleiro}')`;
+  document.getElementById("perfil-avatar").style.backgroundImage = "url('" + SPRITE_CLASSE[classe] + "')";
   const cor = j.cargo_cor || "#4af6ff";
-  const badge = j.cargo_badge || "";
-  const nomeEl = document.getElementById("perfil-nome");
-  nomeEl.innerHTML = `${badge} ${j.nome}`;
-  nomeEl.style.color = cor;
-  document.getElementById("perfil-classe").innerHTML = `<b>${EMOJI_CLASSE[classe] || classe}</b>`;
-  const cargoEl = document.getElementById("perfil-cargo");
-  cargoEl.textContent = (j.cargo_nome || "Player").toUpperCase();
-  cargoEl.style.color = cor;
-  cargoEl.style.borderColor = cor;
-
-  const hpPct = Math.max(0, Math.min(100, (j.hp / j.hp_max) * 100));
-  document.getElementById("perfil-hp-fill").style.width = hpPct + "%";
-  document.getElementById("perfil-hp-txt").textContent = `${j.hp} / ${j.hp_max}`;
-
-  const xpProx = (j.nivel) * 50;
-  const xpPct = Math.min(100, (j.xp / xpProx) * 100);
-  document.getElementById("perfil-xp-fill").style.width = xpPct + "%";
-  document.getElementById("perfil-xp-txt").textContent = `${j.xp} / ${xpProx}`;
-
+  document.getElementById("perfil-nome").innerHTML = '<span style="color:' + cor + '">' + (j.cargo_badge||"") + " " + j.nome + '</span>';
+  document.getElementById("perfil-classe").textContent = EMOJI_CLASSE[classe] || classe;
+  const cargo = document.getElementById("perfil-cargo");
+  cargo.textContent = (j.cargo_nome || "Player").toUpperCase();
+  cargo.style.color = cor;
+  cargo.style.borderColor = cor;
   document.getElementById("perfil-nivel").textContent = "Nv " + j.nivel;
   document.getElementById("perfil-classe-txt").textContent = EMOJI_CLASSE[classe] || classe;
   document.getElementById("perfil-ouro").textContent = j.ouro;
-  document.getElementById("perfil-pos").textContent = `(${j.x}, ${j.y})`;
+  document.getElementById("perfil-pos").textContent = "(" + j.x + ", " + j.y + ")";
   const arma = j.arma ? j.arma[0] : "Punhos";
   const bonus = j.arma ? j.arma[1] : 0;
   document.getElementById("perfil-arma").textContent = arma;
-  document.getElementById("perfil-bonus").textContent = "+" + bonus;
   document.getElementById("perfil-dano").textContent = (8 + bonus) + " ~ " + (15 + bonus);
-
-  document.getElementById("perfil-painel").classList.add("aberto");
+  document.getElementById("perfil-painel").style.display = "flex";
 }
-function fecharPerfil() {
-  document.getElementById("perfil-painel").classList.remove("aberto");
-}
+function fecharPerfil() { document.getElementById("perfil-painel").style.display = "none"; }
 </script>
+
+<div id="mapa-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;flex-direction:column;padding:15px;font-family:monospace">
+  <div class="modal-topo">
+    <h2>🌍 Mapa do Reino</h2>
+    <button onclick="fecharMapa()">Fechar</button>
+  </div>
+  <div style="display:flex;justify-content:center;align-items:center;flex:1;overflow:auto">
+    <div id="mapa-grande" style="display:grid;gap:1px;padding:8px;background:#1a1a0a;border:3px solid #c9a227;border-radius:6px;"></div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:#888;margin-top:10px">
+    <span style="display:inline-block;width:10px;height:10px;background:#4af6ff;border-radius:50%;vertical-align:middle"></span> você
+    &nbsp;&nbsp;<span style="display:inline-block;width:10px;height:10px;background:#ff4444;border-radius:50%;vertical-align:middle"></span> monstro
+    &nbsp;&nbsp;<span style="display:inline-block;width:10px;height:10px;background:#ffd700;border-radius:50%;vertical-align:middle"></span> NPC
+    &nbsp;&nbsp;<span style="display:inline-block;width:10px;height:10px;background:#fff;border-radius:50%;vertical-align:middle"></span> jogador
+  </div>
+</div>
+<script>
+function abrirMapa() {
+  if (!J) return;
+  const g = document.getElementById("mapa-grande");
+  const tam = 32;
+  const view = J.view;
+  g.style.gridTemplateColumns = "repeat(" + view + ", " + tam + "px)";
+  g.style.gridTemplateRows = "repeat(" + view + ", " + tam + "px)";
+  g.innerHTML = "";
+  const monsSet = {};
+  J.monstros.forEach(m => { monsSet[m[2]+","+m[3]] = m; });
+  const npcsSet = {};
+  J.npcs.forEach(n => { npcsSet[n[2]+","+n[3]] = n; });
+  const outrosMap = {};
+  J.outros.forEach(o => { outrosMap[o.x+","+o.y] = o; });
+  const metade = J.metade;
+  for (let vy = 0; vy < view; vy++) {
+    for (let vx = 0; vx < view; vx++) {
+      const mx = J.x - metade + vx;
+      const my = J.y - metade + vy;
+      const tipo = (J.viewport[vy] && J.viewport[vy][vx]) || "agua";
+      const d = document.createElement("div");
+      d.style.width = tam + "px"; d.style.height = tam + "px";
+      d.style.backgroundImage = "url('/static/sprites/" + tipo + ".png')";
+      d.style.backgroundSize = "cover";
+      d.style.imageRendering = "pixelated";
+      d.style.position = "relative";
+      if (mx === J.x && my === J.y) {
+        d.innerHTML = '<div style="position:absolute;inset:20%;background:#4af6ff;border-radius:50%;box-shadow:0 0 8px #4af6ff"></div>';
+      } else if (monsSet[mx+","+my]) {
+        d.innerHTML = '<div style="position:absolute;inset:25%;background:#ff4444;border-radius:50%;box-shadow:0 0 6px #ff4444"></div>';
+      } else if (npcsSet[mx+","+my]) {
+        d.innerHTML = '<div style="position:absolute;inset:25%;background:#ffd700;border-radius:50%;box-shadow:0 0 6px #ffd700"></div>';
+      } else if (outrosMap[mx+","+my]) {
+        const o = outrosMap[mx+","+my];
+        d.innerHTML = '<div style="position:absolute;inset:25%;background:' + o.cor + ';border-radius:50%;box-shadow:0 0 6px #fff"></div>';
+      }
+      g.appendChild(d);
+    }
+  }
+  document.getElementById("mapa-modal").style.display = "flex";
+}
+function fecharMapa() { document.getElementById("mapa-modal").style.display = "none"; }
+</script>
+
+<div id="config-painel" style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;flex-direction:column;padding:20px;overflow-y:auto;font-family:monospace">
+  <div style="max-width:400px;width:100%;margin:auto;background:#10142a;border:3px solid #8a7a5a;padding:16px;border-radius:6px">
+    <h2 style="text-align:center;font-size:14px;color:#4af6ff;margin:0 0 16px">⚙️ CONFIGURACOES</h2>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">🔊 Volume</label>
+      <input type="range" min="0" max="100" value="70" style="width:100%">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">🎵 Musica</label>
+      <input type="range" min="0" max="100" value="50" style="width:100%">
+    </div>
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="cfg-efeitos" checked>
+      <label for="cfg-efeitos" style="font-size:12px;color:#aaa">Mostrar efeitos visuais</label>
+    </div>
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="cfg-nomes" checked>
+      <label for="cfg-nomes" style="font-size:12px;color:#aaa">Mostrar nomes</label>
+    </div>
+    <hr style="border:none;border-top:1px solid #2a2a4a;margin:16px 0">
+    <button onclick="sairJogo()" style="width:100%;padding:10px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:6px;font-family:monospace;font-size:12px;cursor:pointer;margin-bottom:8px">Sair da conta</button>
+    <button onclick="fecharConfig()" style="width:100%;padding:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
+  </div>
+</div>
+<script>
+function abrirConfig() { document.getElementById("config-painel").style.display = "flex"; }
+function fecharConfig() { document.getElementById("config-painel").style.display = "none"; }
+function sairJogo() { if (confirm("Sair da conta mesmo?")) window.location.href = "/logout"; }
+</script>
+
+<div id="perfil-painel" style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;flex-direction:column;padding:20px;overflow-y:auto;font-family:monospace">
+  <div style="max-width:400px;width:100%;margin:auto;background:#10142a;border:3px solid #a06bff;padding:16px;border-radius:6px">
+    <h2 style="text-align:center;font-size:14px;color:#4af6ff;margin:0 0 12px">👤 PERSONAGEM</h2>
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div id="perfil-avatar" style="width:64px;height:64px;background:#05070f center/cover;border:2px solid #4af6ff;border-radius:6px;image-rendering:pixelated"></div>
+      <div style="flex:1">
+        <div id="perfil-nome" style="font-size:13px;font-weight:bold;margin-bottom:4px"></div>
+        <div id="perfil-classe" style="font-size:11px;color:#aaa"></div>
+        <div id="perfil-cargo" style="display:inline-block;font-size:9px;padding:2px 6px;border:1px solid;border-radius:3px;margin-top:4px"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Nivel</span><span id="perfil-nivel" style="color:#eee;font-weight:bold">-</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Classe</span><span id="perfil-classe-txt" style="color:#eee;font-weight:bold">-</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Ouro</span><span id="perfil-ouro" style="color:#eee;font-weight:bold">-</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Posicao</span><span id="perfil-pos" style="color:#eee;font-weight:bold">-</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Arma</span><span id="perfil-arma" style="color:#eee;font-weight:bold">-</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0"><span style="color:#888">Dano</span><span id="perfil-dano" style="color:#eee;font-weight:bold">-</span></div>
+    <button onclick="fecharPerfil()" style="width:100%;padding:12px;margin-top:12px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer">FECHAR</button>
+  </div>
+</div>
 </body></html>
