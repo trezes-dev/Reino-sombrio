@@ -671,4 +671,9 @@ function fecharPerfil() {
   document.getElementById("perfil-painel").classList.remove("aberto");
 }
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').then(r => console.log('SW ok')).catch(e => console.log('SW erro', e));
+}
+</script>
 </body></html>
