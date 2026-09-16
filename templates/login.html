@@ -74,6 +74,7 @@
   .pixel.bl { bottom: -3px; left: -3px; background: #a06bff; }
   .pixel.br { bottom: -3px; right: -3px; }
 </style>
+<link rel="manifest" href="/static/manifest.json">
 </head>
 <body>
 <div class="card">
@@ -95,4 +96,9 @@
   </form>
   <div class="rodape">v0.1 · feito no Termux</div>
 </div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
+}
+</script>
 </body></html>
