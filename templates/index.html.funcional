@@ -1,0 +1,642 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reino Sombrio MMORPG</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#4af6ff">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+body { background:#111; color:#eee; font-family:monospace; padding:15px; max-width:600px; margin:auto; }
+#topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; }
+#topo h1 { margin:0; font-size:18px; color:#4af6ff; }
+#topo .botoes { display:flex; gap:6px; }
+#topo a { padding:8px 12px; background:#222; border-radius:6px; text-decoration:none; font-size:11px; }
+#topo .painel { color:#4af6ff; border:1px solid #4af6ff; }
+#topo .sair { color:#ff5566; border:1px solid #ff5566; }
+#hud { background:#222; padding:12px; border-radius:8px; margin-bottom:12px; font-size:16px; }
+#log { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:10px; min-height:30px; color:#8f8; margin-bottom:12px; }
+#area-mapa { position: relative; }
+#mapa { display:grid; gap:2px; justify-content:center; margin:15px 0; }
+.tile { width:28px; height:28px; border-radius:3px; }
+.tile {
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  background-color: #2d5a1e;
+}
+.tile.grama { background-image: url('/static/sprites/grama.png'); }
+.tile.agua { background-image: url('/static/sprites/agua.png'); }
+.tile.arvore { background-image: url('/static/sprites/arvore.png'); }
+.tile.pedra { background-image: url('/static/sprites/pedra.png'); }
+.tile.monstro { background-image: url('/static/sprites/monstro.png'); }
+.tile.npc { background-image: url('/static/sprites/npc.png'); box-shadow: none; }
+.tile.player { background-image: url('/static/sprites/player.png'); box-shadow: 0 0 10px #4af6ff; z-index: 2; }
+.tile.player.classe-cavaleiro { background-image: url('/static/sprites/player-cavaleiro.png'); }
+.tile.player.classe-arqueiro { background-image: url('/static/sprites/player-arqueiro.png'); }
+.tile.player.classe-mago { background-image: url('/static/sprites/player-mago.png'); }
+.tile.outro { background-color: transparent; }
+.tile.outro .sprite-outro { width: 100%; height: 100%; background-image: url('/static/sprites/player.png'); background-size: cover; image-rendering: pixelated; }
+
+.player { background:#4af; box-shadow: 0 0 8px #4af; }
+.monstro { background:#c33; }
+.npc { background:#fc3; box-shadow: 0 0 8px #fc3; }
+.outro { box-shadow: 0 0 8px #fff; border:1px solid #fff; }
+#minimapa-box { position: absolute; top: -10px; right: 0; background: #0a0a14; border: 2px solid #4af6ff; padding: 6px; border-radius: 6px; z-index: 5; box-shadow: 0 0 12px rgba(74,246,255,0.4); }
+#minimapa-box .titulo { font-size: 8px; color: #4af6ff; margin-bottom: 4px; text-align: center; letter-spacing: 1px; }
+#minimapa { display: grid; gap: 1px; }
+#minimapa .mt { width: 7px; height: 7px; background: #1a1a2a; border-radius: 1px; }
+#minimapa .m-player { background: #4af; box-shadow: 0 0 4px #4af; }
+#minimapa .m-monstro { background: #c33; }
+#minimapa .m-npc { background: #fc3; }
+#minimapa .m-outro { background: #fff; box-shadow: 0 0 3px #fff; }
+#inv { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; padding:10px; font-size:13px; margin-top:12px; }
+.ctrl { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:220px; margin:auto; }
+.ctrl button { padding:14px; font-size:20px; background:#333; color:#eee; border:1px solid #555; border-radius:8px; }
+.ctrl button:active { background:#4af; }
+.full { width:100%; padding:14px; margin:6px 0; font-size:15px; background:#333; color:#eee; border:1px solid #555; border-radius:8px; }
+#hotbar { display: flex; gap: 6px; justify-content: center; margin: 12px 0 8px; flex-wrap: wrap; }
+.slot { width: 52px; height: 52px; background: #1a1a2a; border: 2px solid #444; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; position: relative; cursor: pointer; user-select: none; }
+.slot:hover { border-color: #4af6ff; }
+.slot:active { transform: scale(0.95); }
+.slot.vazio { opacity: 0.4; }
+.slot.vazio-item { border-color: #333; }
+.slot.vazio-item .icon { opacity: 0.25; filter: grayscale(1); }
+.slot .icon { display: inline-block; }
+#picker { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 40; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+#picker.aberto { display: flex; }
+#picker h3 { color: #4af6ff; margin: 0 0 12px; font-size: 15px; }
+#picker .item-pick { background: #1a1a2a; border: 2px solid #444; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; }
+#picker .item-pick:hover { border-color: #4af6ff; }
+#picker .item-pick .em { font-size: 26px; }
+#picker .item-pick .info { flex: 1; }
+#picker .item-pick .info .nome { font-weight: bold; }
+#picker .item-pick .info .tipo { color: #888; font-size: 11px; }
+#picker .botoes { display: flex; gap: 8px; margin-top: 12px; }
+#picker button { flex: 1; padding: 12px; background: #222; color: #eee; border: 1px solid #555; border-radius: 6px; font-family: inherit; font-size: 13px; cursor: pointer; }
+#picker .limpar { border-color: #ff5566; color: #ff5566; }
+
+.slot .qtd { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #fff; background: #000; padding: 1px 4px; border-radius: 3px; font-weight: bold; }
+.slot .nome-pequeno { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 8px; color: #666; white-space: nowrap; }
+.slot.arma { border-color: #c33; }
+.slot.pocao { border-color: #4f4; }
+.slot.escudo { border-color: #48f; }
+.slot.armadura { border-color: #a6f; }
+#chat-btn { position: fixed; bottom: 18px; right: 18px; z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: #4af6ff; color: #0a0a1a; border: none; font-size: 26px; box-shadow: 0 0 18px rgba(74,246,255,0.6); cursor: pointer; }
+#chat-btn .badge-msg { position: absolute; top: -6px; right: -6px; background: #ff5566; color: #fff; border-radius: 12px; min-width: 22px; height: 22px; line-height: 22px; font-size: 11px; font-family: monospace; padding: 0 5px; display: none; }
+#chat-painel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 30; display: none; flex-direction: column; padding: 15px; }
+#chat-painel.aberto { display: flex; }
+#chat-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+#chat-topo h2 { margin: 0; font-size: 15px; color: #4af6ff; }
+#chat-topo .fechar { background: #222; color: #ff5566; border: 1px solid #ff5566; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px; }
+#chat-msgs { flex: 1; overflow-y: auto; background: #0a0a14; border: 1px solid #2a2a3a; border-radius: 8px; padding: 10px; font-size: 13px; line-height: 1.7; }
+#chat-msgs .msg { margin-bottom: 4px; word-wrap: break-word; }
+#chat-msgs .msg .hora { color: #555; font-size: 10px; }
+#chat-msgs .msg.sistema { color: #8fff8f; font-style: italic; opacity: 0.9; }
+#chat-msgs .msg.meu .nome { text-decoration: underline; }
+#chat-input-area { display: flex; gap: 6px; margin-top: 10px; }
+#chat-input { flex: 1; padding: 12px; background: #05070f; color: #4af6ff; border: 2px solid #2a3050; font-family: inherit; font-size: 13px; border-radius: 6px; outline: none; }
+#chat-input:focus { border-color: #4af6ff; box-shadow: 0 0 8px rgba(74,246,255,0.4); }
+#chat-input-area button { padding: 12px 18px; background: #4af6ff; color: #0a0a1a; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; cursor: pointer; font-weight: bold; }
+#chat-dica { font-size: 10px; color: #555; margin-top: 6px; text-align: center; }
+@media (orientation: landscape) {
+  body { max-width: 100%; padding: 8px; }
+  #topo h1 { font-size: 15px; }
+  #hud { font-size: 13px; padding: 8px; margin-bottom: 8px; }
+  #log { font-size: 12px; padding: 6px; margin-bottom: 8px; min-height: 20px; }
+  .wrap-jogo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  #mapa { margin: 0; }
+  .tile { width: 22px; height: 22px; }
+  .ctrl button { padding: 12px; font-size: 18px; }
+  .full { margin: 8px 0; padding: 10px; }
+  #inv { font-size: 11px; padding: 8px; margin-top: 6px; }
+  #chat-btn { bottom: 12px; right: 12px; width: 48px; height: 48px; font-size: 22px; }
+  #minimapa-box { top: -14px; right: -4px; padding: 4px; }
+  #minimapa .mt { width: 5px; height: 5px; }
+  .slot { width: 44px; height: 44px; font-size: 18px; }
+  .slot .nome-pequeno { display: none; }
+}
+
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #000 url('/static/loading/fundo.jpg') center/cover no-repeat;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: 30px 20px; transition: opacity 0.8s;
+}
+#loading-screen.saindo { opacity: 0; pointer-events: none; }
+#loading-screen h1 {
+  font-family: monospace; font-size: 20px; color: #4af6ff;
+  text-shadow: 0 0 20px #4af6ff, 2px 2px 0 #0a0a1a;
+  letter-spacing: 3px; margin: 0; text-align: center;
+  animation: brilho 2s infinite;
+}
+#loading-screen h1 span { display: block; font-size: 11px; color: #a06bff; margin-top: 6px; letter-spacing: 6px; }
+@keyframes brilho { 0%,100% { text-shadow: 0 0 20px #4af6ff, 2px 2px 0 #0a0a1a; } 50% { text-shadow: 0 0 35px #4af6ff, 2px 2px 0 #0a0a1a; } }
+#loading-bottom { width: 100%; max-width: 400px; }
+#loading-msg {
+  font-family: monospace; font-size: 11px; color: #8fff8f;
+  text-align: center; margin-bottom: 10px; min-height: 16px;
+  text-shadow: 0 0 8px #8fff8f;
+}
+#loading-bar {
+  width: 100%; height: 20px; background: #0a0a1a;
+  border: 3px solid #4af6ff; border-radius: 3px;
+  box-shadow: 0 0 15px rgba(74,246,255,0.5);
+  position: relative; overflow: hidden;
+}
+#loading-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, #4af6ff, #a06bff);
+  transition: width 0.3s; box-shadow: 0 0 10px #4af6ff inset;
+}
+#loading-pct {
+  font-family: monospace; font-size: 10px; color: #4af6ff;
+  text-align: center; margin-top: 6px;
+}
+
+#btn-perfil {
+  padding: 8px 12px; background: #222; color: #a06bff;
+  border: 1px solid #a06bff; border-radius: 6px;
+  text-decoration: none; font-size: 11px; font-family: inherit;
+  cursor: pointer;
+}
+#perfil-painel {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.95);
+  display: none; padding: 20px; overflow-y: auto;
+}
+#perfil-painel.aberto { display: flex; flex-direction: column; }
+#perfil-card {
+  max-width: 500px; width: 100%; margin: auto;
+  background: #10142a;
+  border: 3px solid #a06bff;
+  box-shadow: 0 0 0 3px #10142a, 0 0 0 6px #4af6ff, 0 0 30px rgba(160,107,255,0.5);
+  padding: 20px; border-radius: 4px;
+}
+#perfil-card h2 {
+  font-size: 15px; color: #4af6ff; margin: 0 0 16px; text-align: center;
+  text-shadow: 2px 2px 0 #a06bff; letter-spacing: 2px;
+}
+#perfil-top {
+  display: flex; gap: 16px; align-items: flex-start;
+  margin-bottom: 16px; border-bottom: 1px solid #2a2a4a; padding-bottom: 16px;
+}
+#perfil-avatar {
+  width: 80px; height: 80px; background: #05070f;
+  border: 2px solid #4af6ff; border-radius: 8px;
+  background-size: cover; background-position: center;
+  image-rendering: pixelated;
+  box-shadow: 0 0 10px rgba(74,246,255,0.5);
+  flex-shrink: 0;
+}
+#perfil-info { flex: 1; }
+#perfil-nome {
+  font-size: 14px; font-weight: bold; margin-bottom: 4px;
+  text-shadow: 0 0 6px currentColor;
+}
+#perfil-classe {
+  font-size: 11px; color: #a0a0c0; margin-bottom: 4px;
+}
+#perfil-classe b { color: #4af6ff; }
+#perfil-cargo {
+  font-size: 10px; display: inline-block;
+  padding: 2px 8px; border-radius: 3px; border: 1px solid;
+  margin-top: 4px;
+}
+.perfil-bar {
+  height: 16px; background: #05070f; border: 2px solid #2a3050;
+  border-radius: 3px; overflow: hidden; position: relative;
+  margin-bottom: 4px;
+}
+.perfil-bar .fill {
+  height: 100%; transition: width 0.4s;
+}
+.perfil-bar .txt {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #fff; text-shadow: 1px 1px 2px #000; font-weight: bold;
+  z-index: 2;
+}
+.perfil-bar.hp .fill { background: linear-gradient(90deg, #c33, #ff5566); }
+.perfil-bar.xp .fill { background: linear-gradient(90deg, #4af6ff, #a06bff); }
+.perfil-linha {
+  display: flex; justify-content: space-between;
+  font-size: 11px; padding: 6px 0;
+  border-bottom: 1px dashed #2a2a4a;
+}
+.perfil-linha:last-child { border-bottom: none; }
+.perfil-linha .label { color: #888; }
+.perfil-linha .valor { color: #eee; font-weight: bold; }
+#perfil-titulo-secao {
+  font-size: 10px; color: #a06bff; margin: 14px 0 6px;
+  letter-spacing: 2px; border-bottom: 1px solid #2a2a4a; padding-bottom: 4px;
+}
+#perfil-fechar {
+  width: 100%; padding: 12px; margin-top: 16px;
+  background: #4af6ff; color: #0a0a1a;
+  border: none; border-radius: 6px;
+  font-family: inherit; font-size: 12px; font-weight: bold;
+  cursor: pointer; letter-spacing: 1px;
+}
+</style></head><body>
+<div id="loading-screen">
+  <h1>REINO SOMBRIO<span>MMORPG</span></h1>
+  <div id="loading-bottom">
+    <div id="loading-msg">acordando o dragão...</div>
+    <div id="loading-bar"><div id="loading-fill"></div></div>
+    <div id="loading-pct">0%</div>
+  </div>
+</div>
+
+
+<div id="topo">
+  <h1>Reino Sombrio</h1>
+  <div class="botoes">
+    <a class="painel" href="/painel">🛡️ Painel</a>
+    <a class="sair" href="/logout">Sair</a>
+  </div>
+</div>
+
+<div id="hud">carregando...</div>
+<div id="log">Use as setas para andar</div>
+
+<div class="wrap-jogo">
+  <div id="area-mapa">
+    <div id="minimapa-box">
+      <div class="titulo">MAPA</div>
+      <div id="minimapa"></div>
+    </div>
+    <div id="mapa"></div>
+  </div>
+  <div class="ctrl">
+    <div></div><button onclick="mover('cima')">↑</button><div></div>
+    <button onclick="mover('esq')">←</button>
+    <button onclick="descansar()">💤</button>
+    <button onclick="mover('dir')">→</button>
+    <div></div><button onclick="mover('baixo')">↓</button><div></div>
+  </div>
+</div>
+
+<div id="hotbar"></div>
+
+<button class="full" onclick="pocao()">🧪 Usar pocao</button>
+<div id="inv">Inventario...</div>
+
+<button id="chat-btn" onclick="chatAbrir()">
+  💬<span class="badge-msg" id="chat-badge">0</span>
+</button>
+
+<div id="chat-painel">
+  <div id="chat-topo">
+    <h2>💬 Chat Global</h2>
+    <button class="fechar" onclick="chatFechar()">Fechar</button>
+  </div>
+  <div id="chat-msgs"></div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="mensagem ou /ajuda" maxlength="200"
+           onkeydown="if(event.key==='Enter')chatEnviar()">
+    <button onclick="chatEnviar()">Enviar</button>
+  </div>
+  <div id="chat-dica">/ajuda /online /me /troca /perfil /onde</div>
+</div>
+
+<script>
+let J = null;
+const EMOJI_ITEM = {
+  "Espada Curta": "🗡️", "Adaga Enferrujada": "🔪", "Cajado": "🪄",
+  "Arco Curto": "🏹", "Escudo de Madeira": "🛡️", "Armadura de Couro": "🥼",
+  "Poção de Cura": "🧪"
+};
+function emojiDe(nome) { return EMOJI_ITEM[nome] || "📦"; }
+
+function render(j) {
+  if (!j) return;
+  J = j;
+  const arma = j.arma ? ` (${j.arma[0]} +${j.arma[1]})` : "";
+  const corNome = j.cargo_cor || j.cor || '#4af';
+  const badge = j.cargo_badge ? j.cargo_badge + ' ' : '';
+  document.getElementById("hud").innerHTML = `${badge}<span style="color:${corNome};font-weight:bold;text-shadow:0 0 8px ${corNome}">${j.nome}</span> [Nv ${j.nivel}] | HP ${j.hp}/${j.hp_max} | XP ${j.xp} | Ouro ${j.ouro}${arma}`;
+  const mapa = document.getElementById("mapa");
+  mapa.style.gridTemplateColumns = `repeat(${j.W}, 28px)`;
+  mapa.innerHTML = "";
+  const mons = new Set(j.monstros.map(m => m[2] + "," + m[3]));
+  const npcs = new Set((j.npcs || []).map(n => n[2] + "," + n[3]));
+  const outros = new Set((j.outros || []).map(o => o.x + "," + o.y));
+  const mapaOutros = {};
+  (j.outros || []).forEach(o => { mapaOutros[o.x + "," + o.y] = o; });
+  for (let yy = 0; yy < j.H; yy++) {
+    for (let xx = 0; xx < j.W; xx++) {
+      const d = document.createElement("div");
+      d.className = "tile grama";
+      if (xx === j.x && yy === j.y) {
+        d.className = "tile player classe-" + (j.classe || "cavaleiro");
+      } else if (mons.has(xx + "," + yy)) {
+        d.className = "tile monstro";
+      } else if (npcs.has(xx + "," + yy)) {
+        d.className = "tile npc";
+      } else if (outros.has(xx + "," + yy)) {
+        d.className = "tile outro";
+        const o = mapaOutros[xx + "," + yy];
+        d.style.background = o.cor;
+        d.style.opacity = "0.85";
+        d.title = (o.badge || "") + " " + o.nome;
+      }
+      mapa.appendChild(d);
+    }
+  }
+  const mm = document.getElementById("minimapa");
+  mm.style.gridTemplateColumns = `repeat(${j.W}, 7px)`;
+  mm.innerHTML = "";
+  for (let yy = 0; yy < j.H; yy++) {
+    for (let xx = 0; xx < j.W; xx++) {
+      const d = document.createElement("div");
+      d.className = "mt";
+      if (xx === j.x && yy === j.y) d.className += " m-player";
+      else if (mons.has(xx + "," + yy)) d.className += " m-monstro";
+      else if (npcs.has(xx + "," + yy)) d.className += " m-npc";
+      else if (outros.has(xx + "," + yy)) d.className += " m-outro";
+      mm.appendChild(d);
+    }
+  }
+  const hb = document.getElementById("hotbar");
+  hb.innerHTML = "";
+  const itens = j.inv || [];
+  const invPorId = {};
+  itens.forEach(x => {
+    const id = x[4];
+    invPorId[id] = { nome: x[0], tipo: x[1], bonus: x[2], qtd: x[3] };
+  });
+  let hbIds = j.hotbar || [];
+  if (!hbIds.some(x => x > 0)) {
+    hbIds = itens.slice(0, 6).map(x => x[4]);
+    while (hbIds.length < 6) hbIds.push(0);
+  }
+  for (let i = 0; i < 6; i++) {
+    const slot = document.createElement("div");
+    const itemId = hbIds[i] || 0;
+    if (itemId && invPorId[itemId]) {
+      const it = invPorId[itemId];
+      const semQtd = it.qtd <= 0;
+      slot.className = "slot " + it.tipo + (semQtd ? " vazio-item" : "");
+      slot.innerHTML = `<span class="icon">${emojiDe(it.nome)}</span><span class="qtd">${it.qtd}</span><span class="nome-pequeno">${it.nome}</span>`;
+      slot.title = `${it.nome} (${it.tipo} +${it.bonus}) x${it.qtd} - clique para trocar`;
+      slot.onclick = () => abrirPicker(i);
+    } else {
+      slot.className = "slot vazio";
+      slot.textContent = "·";
+      slot.title = "vazio - clique para escolher";
+      slot.onclick = () => abrirPicker(i);
+    }
+    hb.appendChild(slot);
+  }
+  const inv = document.getElementById("inv");
+  inv.innerHTML = "<b>Inventario:</b><br>" + itens.map(x => `  ${x[0]} [${x[1]}] +${x[2]} x${x[3]}`).join("<br>");
+}
+
+async function usarSlot(nome, tipo) {
+  if (tipo === "pocao") await pocao();
+  else if (tipo === "arma") document.getElementById("log").textContent = `${nome} ja esta em uso`;
+  else document.getElementById("log").textContent = `${nome} equipado`;
+}
+
+async function carregar() { const r = await fetch("/api/estado"); render(await r.json()); }
+async function mover(dir) { const r = await fetch("/api/mover/" + dir); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+async function descansar() { const r = await fetch("/api/descansar"); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+async function pocao() { const r = await fetch("/api/pocao"); const j = await r.json(); document.getElementById("log").textContent = j.msg; render(j.estado); }
+
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/estado");
+    if (r.ok) render(await r.json());
+  } catch(e) {}
+}, 2000);
+
+let ultimoId = 0;
+let naoLidas = 0;
+let chatAberto = false;
+function chatAbrir() {
+  chatAberto = true;
+  document.getElementById("chat-painel").classList.add("aberto");
+  naoLidas = 0;
+  document.getElementById("chat-badge").style.display = "none";
+  setTimeout(() => document.getElementById("chat-input").focus(), 100);
+  carregarChat(true);
+}
+function chatFechar() {
+  chatAberto = false;
+  document.getElementById("chat-painel").classList.remove("aberto");
+}
+async function carregarChat(forcar) {
+  const r = await fetch("/api/chat/mensagens?desde=" + ultimoId);
+  const novas = await r.json();
+  if (!novas.length && !forcar) return;
+  const box = document.getElementById("chat-msgs");
+  const eu = J ? J.id : null;
+  if (forcar) { box.innerHTML = ""; ultimoId = 0; }
+  if (forcar && ultimoId === 0) {
+    const r2 = await fetch("/api/chat/mensagens?desde=0");
+    const todas = await r2.json();
+    todas.forEach(m => { ultimoId = m.id; box.appendChild(montarMsg(m, eu)); });
+  } else {
+    novas.forEach(m => {
+      ultimoId = m.id;
+      box.appendChild(montarMsg(m, eu));
+      if (!chatAberto) {
+        naoLidas++;
+        const b = document.getElementById("chat-badge");
+        b.textContent = naoLidas > 9 ? "9+" : naoLidas;
+        b.style.display = "block";
+      }
+    });
+  }
+  box.scrollTop = box.scrollHeight;
+}
+function montarMsg(m, eu) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+  if (m.canal === "sistema") {
+    div.classList.add("sistema");
+    div.innerHTML = `<span class="hora">${hora}</span> ${m.texto}`;
+    return div;
+  }
+  if (m.jogador_id === eu) div.classList.add("meu");
+  const badge = m.badge ? m.badge + ' ' : '';
+  div.innerHTML = `<span class="hora">${hora}</span> ${badge}<span class="nome" style="color:${m.cor};font-weight:bold">${m.nome}</span>: ${escapeHtml(m.texto)}`;
+  return div;
+}
+function escapeHtml(t) {
+  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+async function chatEnviar() {
+  const inp = document.getElementById("chat-input");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = "";
+  await fetch("/api/chat/enviar", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({texto: texto})
+  });
+  await carregarChat(false);
+}
+setInterval(() => { carregarChat(false); }, 2000);
+carregar().then(() => { if (window._fecharLoading) setTimeout(window._fecharLoading, 800); });
+</script>
+<script>let slotEditando = -1;</script>
+
+<div id="picker">
+  <h3>Escolher item para o slot</h3>
+  <div id="picker-lista"></div>
+  <div class="botoes">
+    <button class="limpar" onclick="limparSlot()">Limpar slot</button>
+    <button onclick="fecharPicker()">Cancelar</button>
+  </div>
+</div>
+<script>
+function abrirPicker(idx) {
+  slotEditando = idx;
+  const lista = document.getElementById("picker-lista");
+  lista.innerHTML = "";
+  const itens = (J && J.inv) || [];
+  if (!itens.length) {
+    lista.innerHTML = "<div style='color:#666;padding:20px;text-align:center'>Inventario vazio</div>";
+  }
+  itens.forEach(x => {
+    const id = x[4];
+    const div = document.createElement("div");
+    div.className = "item-pick";
+    div.innerHTML = '<span class="em">' + emojiDe(x[0]) + '</span><div class="info"><div class="nome">' + x[0] + '</div><div class="tipo">' + x[1] + ' +' + x[2] + ' · x' + x[3] + '</div></div>';
+    div.onclick = () => escolherItem(id);
+    lista.appendChild(div);
+  });
+  document.getElementById("picker").classList.add("aberto");
+}
+function fecharPicker() {
+  document.getElementById("picker").classList.remove("aberto");
+  slotEditando = -1;
+}
+async function escolherItem(itemId) {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice();
+  while (hb.length < 6) hb.push(0);
+  for (let i = 0; i < 6; i++) if (i !== slotEditando && hb[i] === itemId) hb[i] = 0;
+  hb[slotEditando] = itemId;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  fecharPicker();
+  const r = await fetch("/api/estado");
+  render(await r.json());
+}
+async function limparSlot() {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice();
+  while (hb.length < 6) hb.push(0);
+  hb[slotEditando] = 0;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  fecharPicker();
+  const r = await fetch("/api/estado");
+  render(await r.json());
+}
+</script>
+
+<script>
+(function() {
+  const frases = [
+    "acordando o dragão...",
+    "invocando monstros...",
+    "carregando mapa...",
+    "afinando as espadas...",
+    "abrindo os portões do castelo...",
+    "esquentando a forja...",
+    "acendendo as tochas...",
+    "Reino Sombrio te aguarda..."
+  ];
+  let pct = 0;
+  const fill = document.getElementById("loading-fill");
+  const pctEl = document.getElementById("loading-pct");
+  const msgEl = document.getElementById("loading-msg");
+  let idxFrase = 0;
+  const trocaFrase = setInterval(() => {
+    idxFrase = (idxFrase + 1) % frases.length;
+    msgEl.textContent = frases[idxFrase];
+  }, 900);
+  const avanca = setInterval(() => {
+    pct += Math.random() * 12 + 4;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + "%";
+    pctEl.textContent = Math.floor(pct) + "%";
+    if (pct >= 100) {
+      clearInterval(avanca);
+      clearInterval(trocaFrase);
+      msgEl.textContent = "entrando no reino...";
+    }
+  }, 250);
+  window._fecharLoading = function() {
+    pct = 100;
+    fill.style.width = "100%";
+    pctEl.textContent = "100%";
+    msgEl.textContent = "entrando no reino...";
+    setTimeout(() => {
+      const ls = document.getElementById("loading-screen");
+      if (ls) {
+        ls.classList.add("saindo");
+        setTimeout(() => ls.remove(), 900);
+      }
+    }, 400);
+  };
+})();
+</script>
+
+<script>
+const EMOJI_CLASSE = {
+  "cavaleiro": "⚔️ Cavaleiro",
+  "arqueiro": "🏹 Arqueiro",
+  "mago": "🔮 Mago"
+};
+const SPRITE_CLASSE = {
+  "cavaleiro": "/static/sprites/player-cavaleiro.png",
+  "arqueiro": "/static/sprites/player-arqueiro.png",
+  "mago": "/static/sprites/player-mago.png"
+};
+function abrirPerfil() {
+  if (!J) return;
+  const j = J;
+  const classe = j.classe || "cavaleiro";
+  document.getElementById("perfil-avatar").style.backgroundImage = `url('${SPRITE_CLASSE[classe] || SPRITE_CLASSE.cavaleiro}')`;
+  const cor = j.cargo_cor || "#4af6ff";
+  const badge = j.cargo_badge || "";
+  const nomeEl = document.getElementById("perfil-nome");
+  nomeEl.innerHTML = `${badge} ${j.nome}`;
+  nomeEl.style.color = cor;
+  document.getElementById("perfil-classe").innerHTML = `<b>${EMOJI_CLASSE[classe] || classe}</b>`;
+  const cargoEl = document.getElementById("perfil-cargo");
+  cargoEl.textContent = (j.cargo_nome || "Player").toUpperCase();
+  cargoEl.style.color = cor;
+  cargoEl.style.borderColor = cor;
+
+  const hpPct = Math.max(0, Math.min(100, (j.hp / j.hp_max) * 100));
+  document.getElementById("perfil-hp-fill").style.width = hpPct + "%";
+  document.getElementById("perfil-hp-txt").textContent = `${j.hp} / ${j.hp_max}`;
+
+  const xpProx = (j.nivel) * 50;
+  const xpPct = Math.min(100, (j.xp / xpProx) * 100);
+  document.getElementById("perfil-xp-fill").style.width = xpPct + "%";
+  document.getElementById("perfil-xp-txt").textContent = `${j.xp} / ${xpProx}`;
+
+  document.getElementById("perfil-nivel").textContent = "Nv " + j.nivel;
+  document.getElementById("perfil-classe-txt").textContent = EMOJI_CLASSE[classe] || classe;
+  document.getElementById("perfil-ouro").textContent = j.ouro;
+  document.getElementById("perfil-pos").textContent = `(${j.x}, ${j.y})`;
+  const arma = j.arma ? j.arma[0] : "Punhos";
+  const bonus = j.arma ? j.arma[1] : 0;
+  document.getElementById("perfil-arma").textContent = arma;
+  document.getElementById("perfil-bonus").textContent = "+" + bonus;
+  document.getElementById("perfil-dano").textContent = (8 + bonus) + " ~ " + (15 + bonus);
+
+  document.getElementById("perfil-painel").classList.add("aberto");
+}
+function fecharPerfil() {
+  document.getElementById("perfil-painel").classList.remove("aberto");
+}
+</script>
+</body></html>
