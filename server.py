@@ -691,17 +691,23 @@ def api_interagir():
     c.close()
     if not npc:
         return jsonify({"acao": "nada", "msg": "Nada por perto"})
-    if npc[2] == "loja":
+    if npc[2] in ("loja", "ferreiro", "alquimista"):
         return jsonify({"acao": "abrir_loja", "npc_nome": npc[1], "npc_id": npc[0]})
     return jsonify({"acao": "nada", "msg": "Nada para interagir aqui"})
 
 @app.route("/api/loja/itens")
 @login_obrigatorio
 def api_loja_itens():
+    npc_id = request.args.get("npc_id", 0, type=int)
     c = con()
-    rows = c.execute("""SELECT l.id, l.preco, l.regiao, i.nome, i.tipo, i.bonus, i.id
-        FROM loja_itens l JOIN itens i ON i.id=l.item_id
-        ORDER BY l.preco ASC""").fetchall()
+    if npc_id:
+        rows = c.execute("""SELECT l.id, l.preco, l.regiao, i.nome, i.tipo, i.bonus, i.id
+            FROM loja_itens l JOIN itens i ON i.id=l.item_id
+            WHERE l.npc_id=? ORDER BY l.preco ASC""", (npc_id,)).fetchall()
+    else:
+        rows = c.execute("""SELECT l.id, l.preco, l.regiao, i.nome, i.tipo, i.bonus, i.id
+            FROM loja_itens l JOIN itens i ON i.id=l.item_id
+            ORDER BY l.preco ASC""").fetchall()
     c.close()
     return jsonify([{"id": r[0], "preco": r[1], "regiao": r[2], "nome": r[3],
                      "tipo": r[4], "bonus": r[5], "item_id": r[6]} for r in rows])

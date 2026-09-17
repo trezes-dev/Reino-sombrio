@@ -405,3 +405,16 @@ cat ~/rpg/CONTEXTO.md | termux-clipboard-set
 - Bug do auto-preenchimento da hotbar corrigido
 - Sistema de vendas: 50% do valor de loja, ou valor padrao por tipo
 - Proximo: sprite do jogador com arma na mao + mais NPCs (ferreiro, alquimista)
+
+### Sessão 17/09/2026 (manhã/tarde - 10h-15h)
+- Criados 3 NPCs com sprites LPC unicos (gerador Universal-LPC):
+  - Mercador (novo sprite, verde/marrom) - 44, 9
+  - Ferreiro (ruivo com avental) - 42, 10
+  - Alquimista (mago azul) - 46, 10
+- Cada NPC tem loja propria (coluna npc_id em loja_itens)
+- Ferreiro vende: Katana (500), Cajado (150), Arco (120), Armadura (80)
+- Alquimista vende: Poca de Cura (25), Mana (35), Veneno (50)
+- Mercador vende: Poca (25), Adaga (50), Escudo (80), Espada (100)
+- Frontend: class="sprite npc-{tipo}" para diferenciar visualmente
+- Backend: /api/loja/itens?npc_id=X filtra por NPC
+- Proximo: sprite do jogador com arma na mao / quests / drop de itens

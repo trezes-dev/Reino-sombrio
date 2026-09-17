@@ -711,7 +711,7 @@ async function acaoInteragir() {
   const r = await fetch("/api/interagir");
   const j = await r.json();
   if (j.acao === "abrir_loja") {
-    abrirLoja(j.npc_nome);
+    abrirLoja(j.npc_nome, j.npc_id);
   } else {
     logMsg(j.msg || "Nada para interagir aqui");
   }
@@ -1162,11 +1162,13 @@ let lojaItemSel = null;
 let lojaItensCompra = [];
 let lojaItensVenda = [];
 
-async function abrirLoja(npcNome) {
+let lojaNpcId = 0;
+async function abrirLoja(npcNome, npcId) {
   document.getElementById("loja-titulo").textContent = "🏪 " + (npcNome || "MERCADOR").toUpperCase();
   document.getElementById("loja-msg").style.display = "none";
   lojaAba = "compra";
   lojaItemSel = null;
+  lojaNpcId = npcId || 0;
   mudarAbaLoja("compra");
   abrirModal("modal-loja");
 }
@@ -1196,7 +1198,7 @@ async function carregarLoja() {
   grade.innerHTML = "";
   let itens = [];
   if (lojaAba === "compra") {
-    const r = await fetch("/api/loja/itens");
+    const r = await fetch("/api/loja/itens?npc_id=" + lojaNpcId);
     lojaItensCompra = await r.json();
     itens = lojaItensCompra;
   } else {
