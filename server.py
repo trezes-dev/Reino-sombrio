@@ -156,9 +156,10 @@ def estado(jid):
     except:
         hotbar_ids = []
     arma = c.execute("""SELECT i.nome, i.bonus FROM inventario inv JOIN itens i ON i.id=inv.item_id
-        WHERE inv.jogador_id=? AND i.tipo='arma' ORDER BY i.bonus DESC LIMIT 1""", (jid,)).fetchone()
-    inv = c.execute("""SELECT i.nome, i.tipo, i.bonus, inv.qtd, i.id FROM inventario inv
-        JOIN itens i ON i.id=inv.item_id WHERE inv.jogador_id=?""", (jid,)).fetchall()
+        WHERE inv.jogador_id=? AND i.tipo='arma' AND inv.equipado=1 LIMIT 1""", (jid,)).fetchone()
+    inv = c.execute("""SELECT i.nome, i.tipo, i.bonus, inv.qtd, i.id, inv.id, COALESCE(inv.equipado,0)
+        FROM inventario inv JOIN itens i ON i.id=inv.item_id
+        WHERE inv.jogador_id=? ORDER BY inv.equipado DESC, i.bonus DESC""", (jid,)).fetchall()
     mons = c.execute("SELECT id, nome, x, y, hp FROM monstros").fetchall()
     npcs = c.execute("SELECT id, nome, x, y, tipo FROM npcs").fetchall()
     agora = time.time()
@@ -616,7 +617,7 @@ def api_mover(dir):
     if m:
         mid, mnome, mdano = m
         arma = c.execute("""SELECT i.bonus FROM inventario inv JOIN itens i ON i.id=inv.item_id
-            WHERE inv.jogador_id=? AND i.tipo='arma' ORDER BY i.bonus DESC LIMIT 1""", (jid,)).fetchone()
+            WHERE inv.jogador_id=? AND i.tipo='arma' AND inv.equipado=1 LIMIT 1""", (jid,)).fetchone()
         bonus = arma[0] if arma else 0
         dano = max(0, mdano - bonus)
         hp -= dano
@@ -757,7 +758,7 @@ def api_atacar():
         return jsonify({"msg": "Nenhum monstro por perto", "estado": estado(jid)})
     mid, mnome, mx, my, mhp, mdano = alvo
     arma = c.execute("""SELECT i.bonus FROM inventario inv JOIN itens i ON i.id=inv.item_id
-        WHERE inv.jogador_id=? AND i.tipo='arma' ORDER BY i.bonus DESC LIMIT 1""", (jid,)).fetchone()
+        WHERE inv.jogador_id=? AND i.tipo='arma' AND inv.equipado=1 LIMIT 1""", (jid,)).fetchone()
     bonus = arma[0] if arma else 0
     dano = random.randint(8, 15) + bonus
     mhp_novo = mhp - dano
@@ -806,6 +807,164 @@ def api_chat_mensagens():
                     "jogador_id": r[4], "nome": r[5] or r[6] or "???",
                     "cargo": r[7] or "player", "cor": info["cor"], "badge": info["badge"]})
     return jsonify(out)
+
+
+
+@app.route("/api/equipar/<int:inv_id>", methods=["POST"])
+@login_obrigatorio
+def api_equipar(inv_id):
+    jid = session["jogador_id"]
+    c = con()
+    row = c.execute("""SELECT inv.id, inv.jogador_id, i.nome, i.tipo, i.bonus
+        FROM inventario inv JOIN itens i ON i.id=inv.item_id
+        WHERE inv.id=?""", (inv_id,)).fetchone()
+    if not row:
+        c.close()
+        return jsonify({"msg": "Item nao encontrado", "estado": estado(jid)})
+    inv_id, dono, nome, tipo, bonus = row
+    if dono != jid:
+        c.close()
+        return jsonify({"msg": "Esse item nao e seu", "estado": estado(jid)})
+    if tipo not in ("arma", "escudo"):
+        c.close()
+        return jsonify({"msg": "Esse item nao pode ser equipado", "estado": estado(jid)})
+
+    ja = c.execute("SELECT equipado FROM inventario WHERE id=?", (inv_id,)).fetchone()[0]
+    if ja == 1:
+        c.execute("UPDATE inventario SET equipado=0 WHERE id=?", (inv_id,))
+        msg = "Desequipou " + nome
+    else:
+        c.execute("""UPDATE inventario SET equipado=0
+            WHERE jogador_id=? AND item_id IN (SELECT id FROM itens WHERE tipo=?)""", (jid, tipo))
+        c.execute("UPDATE inventario SET equipado=1 WHERE id=?", (inv_id,))
+        msg = "Equipou " + nome
+
+    total = c.execute("""SELECT COALESCE(SUM(i.bonus), 0) FROM inventario inv
+        JOIN itens i ON i.id=inv.item_id
+        WHERE inv.jogador_id=? AND inv.equipado=1 AND i.tipo IN ('arma', 'escudo')""", (jid,)).fetchone()[0]
+    c.execute("UPDATE jogador SET dano_bonus=? WHERE id=?", (total, jid))
+    c.commit()
+    c.close()
+    return jsonify({"msg": msg, "estado": estado(jid)})
+
+
+
+@app.route("/api/hotbar/salvar", methods=["POST"])
+@login_obrigatorio
+def api_hotbar_salvar():
+    jid = session["jogador_id"]
+    data = request.get_json(silent=True) or {}
+    slots = data.get("slots", [])
+    if not isinstance(slots, list):
+        return jsonify({"msg": "Formato invalido"}), 400
+    slots = [int(x) if str(x).isdigit() else 0 for x in slots][:8]
+    while len(slots) < 8:
+        slots.append(0)
+    c = con()
+    c.execute("UPDATE jogador SET hotbar=? WHERE id=?", (json.dumps(slots), jid))
+    c.commit()
+    c.close()
+    return jsonify({"msg": "Hotbar salva", "slots": slots})
+
+
+
+@app.route("/api/dev/acao", methods=["POST"])
+@login_obrigatorio
+def api_dev_acao():
+    jid = session["jogador_id"]
+    c = con()
+    row = c.execute("SELECT cargo FROM jogador WHERE id=?", (jid,)).fetchone()
+    cargo = row[0] if row else "player"
+    permitidos = ["ajudante", "mod", "admin", "dev"]
+    if cargo not in permitidos:
+        c.close()
+        return jsonify({"erro": "Sem permissao"}), 403
+
+    data = request.get_json(silent=True) or {}
+    acao = data.get("acao")
+    valor = data.get("valor")
+
+    if acao == "god":
+        if cargo != "dev":
+            c.close()
+            return jsonify({"erro": "Apenas dev"}), 403
+        atual = c.execute("SELECT god FROM jogador WHERE id=?", (jid,)).fetchone()[0] or 0
+        novo = 0 if atual else 1
+        c.execute("UPDATE jogador SET god=? WHERE id=?", (novo, jid))
+        msg = "God " + ("ON" if novo else "OFF")
+    elif acao == "curar":
+        c.execute("UPDATE jogador SET hp=hp_max WHERE id=?", (jid,))
+        msg = "Curado"
+    elif acao == "ouro":
+        try: v = int(valor)
+        except: v = 0
+        c.execute("UPDATE jogador SET ouro=ouro+? WHERE id=?", (v, jid))
+        msg = "+" + str(v) + " ouro"
+    elif acao == "nivel":
+        try: v = int(valor)
+        except: v = 1
+        c.execute("UPDATE jogador SET nivel=?, hp=hp_max WHERE id=?", (v, jid))
+        msg = "Nivel " + str(v)
+    elif acao == "dano":
+        try: v = int(valor)
+        except: v = 0
+        c.execute("UPDATE jogador SET dano_bonus=? WHERE id=?", (v, jid))
+        msg = "Dano bonus " + str(v)
+    elif acao == "speed":
+        try: v = int(valor)
+        except: v = 1
+        c.execute("UPDATE jogador SET speed=? WHERE id=?", (v, jid))
+        msg = "Speed " + str(v)
+    elif acao == "teleporte":
+        try:
+            tx = int(data.get("x", 0))
+            ty = int(data.get("y", 0))
+        except:
+            tx, ty = 0, 0
+        c.execute("UPDATE jogador SET x=?, y=? WHERE id=?", (tx, ty, jid))
+        msg = "Teleportado para (" + str(tx) + "," + str(ty) + ")"
+    elif acao == "spawn_perto":
+        mn = data.get("mob_nome", "Monstro")
+        try: mh = int(data.get("mob_hp", 50))
+        except: mh = 50
+        try: md = int(data.get("mob_dano", 5))
+        except: md = 5
+        px, py = c.execute("SELECT x, y FROM jogador WHERE id=?", (jid,)).fetchone()
+        import random as _r
+        sx = px + _r.randint(-3, 3)
+        sy = py + _r.randint(-3, 3)
+        c.execute("INSERT INTO monstros (nome, x, y, hp, dano) VALUES (?,?,?,?,?)", (mn, sx, sy, mh, md))
+        msg = "Spawnou " + mn + " (" + str(mh) + " HP)"
+    elif acao == "banir":
+        alvo = (data.get("alvo") or "").strip()
+        if not alvo:
+            msg = "Nome vazio"
+        else:
+            r = c.execute("SELECT id FROM jogador WHERE nome=? OR nome_personagem=?", (alvo, alvo)).fetchone()
+            if not r:
+                msg = "Jogador nao encontrado: " + alvo
+            else:
+                c.execute("UPDATE jogador SET cargo='banido' WHERE id=?", (r[0],))
+                msg = "Banido: " + alvo
+    elif acao == "dar_cargo":
+        alvo = (data.get("alvo") or "").strip()
+        novo_cargo = data.get("novo_cargo", "vip")
+        if not alvo:
+            msg = "Nome vazio"
+        else:
+            r = c.execute("SELECT id FROM jogador WHERE nome=? OR nome_personagem=?", (alvo, alvo)).fetchone()
+            if not r:
+                msg = "Jogador nao encontrado: " + alvo
+            else:
+                c.execute("UPDATE jogador SET cargo=? WHERE id=?", (novo_cargo, r[0]))
+                msg = "Cargo '" + novo_cargo + "' dado a " + alvo
+    else:
+        c.close()
+        return jsonify({"erro": "Acao desconhecida: " + str(acao)}), 400
+
+    c.commit()
+    c.close()
+    return jsonify({"msg": msg, "estado": estado(jid)})
 
 if __name__ == "__main__":
     carregar_mapa()

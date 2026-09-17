@@ -298,7 +298,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
         <button onclick="devAcao('dar_cargo', null, {alvo: document.getElementById('dev-alvo').value, novo_cargo: 'vip'})" style="padding:7px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar VIP</button>
       </div>
     </div>
-    <div id="dev-msg" style="background:#0a0a14;border:1px solid #a06bff;border-radius:4px;padding:7px;font-size:11px;color:#a06bff;margin-top:8px;min-height:18px">Pronto</div>
+    <div id="dev-msg" style="display:none;background:#0a0a14;border:1px solid #a06bff;border-radius:4px;padding:7px;font-size:11px;color:#a06bff;margin-top:8px"></div>
   </div>
 </div>
 
@@ -752,8 +752,8 @@ function abrirInv() {
     const slot = document.createElement("div");
     slot.style.cssText = "width:52px;height:52px;background:rgba(40,30,20,0.9);border:2px solid #6a5a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer";
     if (i < itens.length) {
-      const [nome,tipo,bonus,qtd,id] = itens[i];
-      slot.innerHTML = iconeDe(nome, 40) + '<span style="position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000">' + qtd + '</span>';
+      const [nome,tipo,bonus,qtd,id,inv_id,equipado] = itens[i];
+      slot.innerHTML = iconeDe(nome, 40) + '<span style="position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000">' + qtd + '</span>' + (equipado ? '<span style="position:absolute;top:1px;left:3px;font-size:12px;color:#4f4;text-shadow:1px 1px 0 #000">E</span>' : '');
       if (qtd <= 0) { slot.style.opacity = "0.35"; slot.style.filter = "grayscale(1)"; }
       slot.onclick = () => selecionarInv(itens[i]);
     } else { slot.style.opacity = "0.3"; }
@@ -764,7 +764,7 @@ function abrirInv() {
 }
 function fecharInv() { fecharModal("modal-inv"); }
 function selecionarInv(item) {
-  const [nome,tipo,bonus,qtd,id] = item;
+  const [nome,tipo,bonus,qtd,id,inv_id,equipado] = item;
   document.getElementById("inv-info-conteudo").innerHTML =
     '<div style="text-align:center;margin-bottom:6px">' + iconeDe(nome, 64) + '</div>' +
     '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Nome</span><b>' + nome + '</b></div>' +
@@ -773,10 +773,18 @@ function selecionarInv(item) {
     '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888">Qtd</span><b>' + qtd + '</b></div>' +
     '<div style="margin-top:10px;display:flex;gap:6px">' +
     (tipo === "pocao" && qtd > 0 ? '<button onclick="usarPocaoInv()" style="flex:1;padding:8px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Usar</button>' : "") +
+    ((tipo === "arma" || tipo === "escudo") && qtd > 0 ? '<button onclick="equiparItem(' + inv_id + ')" style="flex:1;padding:8px;background:' + (equipado ? '#a44' : '#4a4') + ';color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">' + (equipado ? 'Desequipar' : 'Equipar') + '</button>' : "") +
     (qtd <= 0 ? '<div style="flex:1;padding:8px;background:#3a0a0a;color:#ff8899;border-radius:6px;text-align:center;font-size:11px">Esgotado</div>' : "") +
     '<button onclick="porNaHotbar(' + id + ')" style="flex:1;padding:8px;background:#333;color:#eee;border:1px solid #555;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer">Hotbar</button></div>';
 }
 async function usarPocaoInv() { await usarFerramenta(); abrirInv(); }
+
+async function equiparItem(invId) {
+  await fetch("/api/equipar/" + invId, {method: "POST"});
+  const r = await fetch("/api/estado");
+  render(await r.json());
+  abrirInv();
+}
 async function porNaHotbar(itemId) {
   if (!J) return;
   let hb = (J.hotbar || []).slice(); while (hb.length < 8) hb.push(0);
@@ -1014,7 +1022,12 @@ async function devAcao(acao, valor, extra) {
   if (extra) Object.assign(payload, extra);
   const r = await fetch("/api/dev/acao", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
   const j = await r.json();
-  const msg = document.getElementById("dev-msg"); if (msg) msg.textContent = j.msg || j.erro || "feito";
+  const msg = document.getElementById("dev-msg");
+  if (msg) {
+    const texto = j.msg || j.erro || "feito";
+    msg.textContent = texto;
+    msg.style.display = texto ? "block" : "none";
+  }
   const s = await fetch("/api/estado"); render(await s.json());
 }
 
