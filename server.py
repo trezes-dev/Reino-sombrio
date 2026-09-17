@@ -607,7 +607,8 @@ def api_mover(dir):
     if dir == "dir": nx += 1
     nx = max(0, min(W_MAP-1, nx))
     ny = max(0, min(H_MAP-1, ny))
-    if bloqueia(nx, ny):
+    noclip_ativo = c.execute("SELECT COALESCE(noclip,0) FROM jogador WHERE id=?", (jid,)).fetchone()[0]
+    if not noclip_ativo and bloqueia(nx, ny):
         c.close()
         return jsonify({"msg": "Bloqueado por " + tile_em(nx, ny), "estado": estado(jid)})
     x, y = nx, ny
@@ -958,6 +959,116 @@ def api_dev_acao():
             else:
                 c.execute("UPDATE jogador SET cargo=? WHERE id=?", (novo_cargo, r[0]))
                 msg = "Cargo '" + novo_cargo + "' dado a " + alvo
+    elif acao == "dar_item":
+        chave = str(valor or "")
+        try: qtd = int(data.get("qtd", 1) or 1)
+        except: qtd = 1
+        if qtd < 1: qtd = 1
+        item_row = None
+        if chave.isdigit():
+            item_row = c.execute("SELECT id, nome FROM itens WHERE id=?", (int(chave),)).fetchone()
+        if not item_row:
+            item_row = c.execute("SELECT id, nome FROM itens WHERE LOWER(nome) LIKE LOWER(?) LIMIT 1", ("%" + chave + "%",)).fetchone()
+        if not item_row:
+            msg = "Item nao encontrado: " + chave
+        else:
+            iid, inome = item_row
+            ja = c.execute("SELECT id FROM inventario WHERE jogador_id=? AND item_id=?", (jid, iid)).fetchone()
+            if ja:
+                c.execute("UPDATE inventario SET qtd=qtd+? WHERE id=?", (qtd, ja[0]))
+            else:
+                c.execute("INSERT INTO inventario (jogador_id, item_id, qtd) VALUES (?,?,?)", (jid, iid, qtd))
+            msg = "Adicionado: " + inome + " x" + str(qtd)
+    elif acao == "dar_xp":
+        try: v = int(valor)
+        except: v = 0
+        c.execute("UPDATE jogador SET xp=xp+? WHERE id=?", (v, jid))
+        msg = "+" + str(v) + " XP"
+    elif acao == "setar_hp":
+        try: v = int(valor)
+        except: v = 0
+        c.execute("UPDATE jogador SET hp=? WHERE id=?", (v, jid))
+        msg = "HP = " + str(v)
+    elif acao == "invisivel":
+        if cargo != "dev":
+            c.close()
+            return jsonify({"erro": "Apenas dev"}), 403
+        atual = c.execute("SELECT COALESCE(invisivel,0) FROM jogador WHERE id=?", (jid,)).fetchone()[0]
+        novo = 0 if atual else 1
+        c.execute("UPDATE jogador SET invisivel=? WHERE id=?", (novo, jid))
+        msg = "Invisivel " + ("ON" if novo else "OFF")
+    elif acao == "kickar":
+        alvo = (data.get("alvo") or "").strip()
+        if not alvo:
+            msg = "Nome vazio"
+        else:
+            r = c.execute("SELECT id FROM jogador WHERE nome=? OR nome_personagem=?", (alvo, alvo)).fetchone()
+            if not r:
+                msg = "Jogador nao encontrado: " + alvo
+            else:
+                c.execute("UPDATE jogador SET ultimo_visto=0, hotbar='[]' WHERE id=?", (r[0],))
+                msg = "Kickado: " + alvo
+    elif acao == "ver_inventario":
+        alvo = (data.get("alvo") or "").strip()
+        if not alvo:
+            msg = "Nome vazio"
+        else:
+            r = c.execute("SELECT id FROM jogador WHERE nome=? OR nome_personagem=?", (alvo, alvo)).fetchone()
+            if not r:
+                msg = "Jogador nao encontrado: " + alvo
+            else:
+                invs = c.execute("""SELECT i.nome, inv.qtd FROM inventario inv
+                    JOIN itens i ON i.id=inv.item_id WHERE inv.jogador_id=?""", (r[0],)).fetchall()
+                if not invs:
+                    msg = alvo + ": inventario vazio"
+                else:
+                    msg = alvo + ": " + ", ".join([n + " x" + str(q) for n, q in invs])
+    elif acao == "listar_itens":
+        rows = c.execute("SELECT id, nome, tipo, bonus FROM itens ORDER BY id").fetchall()
+        if not rows:
+            msg = "Nenhum item cadastrado"
+        else:
+            msg = " | ".join([str(r[0]) + ":" + r[1] + "(" + r[2] + ",+" + str(r[3]) + ")" for r in rows[:25]])
+            if len(rows) > 25:
+                msg += " ... (+" + str(len(rows) - 25) + " itens)"
+    elif acao == "listar_monstros":
+        rows = c.execute("SELECT id, nome, hp, x, y FROM monstros ORDER BY id").fetchall()
+        if not rows:
+            msg = "Nenhum monstro ativo"
+        else:
+            msg = " | ".join([str(r[0]) + ":" + r[1] + "(" + str(r[2]) + "hp)" for r in rows[:20]])
+    elif acao == "criar_item":
+        nome_novo = (data.get("nome") or "").strip()
+        tipo_novo = (data.get("tipo") or "arma").strip()
+        try: bonus_novo = int(data.get("bonus", 0))
+        except: bonus_novo = 0
+        if not nome_novo:
+            msg = "Nome vazio"
+        else:
+            ex = c.execute("SELECT id FROM itens WHERE LOWER(nome)=LOWER(?)", (nome_novo,)).fetchone()
+            if ex:
+                msg = "Item ja existe: " + nome_novo + " (id " + str(ex[0]) + ")"
+            else:
+                c.execute("INSERT INTO itens (nome, tipo, bonus) VALUES (?,?,?)", (nome_novo, tipo_novo, bonus_novo))
+                msg = "Criado: " + nome_novo + " (" + tipo_novo + ", +" + str(bonus_novo) + ")"
+    elif acao == "noclip":
+        if cargo != "dev":
+            c.close()
+            return jsonify({"erro": "Apenas dev"}), 403
+        atual = c.execute("SELECT COALESCE(noclip,0) FROM jogador WHERE id=?", (jid,)).fetchone()[0]
+        novo = 0 if atual else 1
+        c.execute("UPDATE jogador SET noclip=? WHERE id=?", (novo, jid))
+        msg = "Noclip " + ("ON" if novo else "OFF")
+    elif acao == "id_item":
+        chave = str(valor or "").strip()
+        if not chave:
+            msg = "Digite um nome"
+        else:
+            r = c.execute("SELECT id, nome FROM itens WHERE LOWER(nome) LIKE LOWER(?) LIMIT 1", ("%" + chave + "%",)).fetchone()
+            if not r:
+                msg = "Nao encontrado: " + chave
+            else:
+                msg = "ID " + str(r[0]) + " = " + r[1]
     else:
         c.close()
         return jsonify({"erro": "Acao desconhecida: " + str(acao)}), 400

@@ -297,6 +297,47 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
         <button onclick="devAcao('banir', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#c33;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Banir</button>
         <button onclick="devAcao('dar_cargo', null, {alvo: document.getElementById('dev-alvo').value, novo_cargo: 'vip'})" style="padding:7px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar VIP</button>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+        <button onclick="devAcao('kickar', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#c93;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Kickar</button>
+        <button onclick="devAcao('ver_inventario', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#39c;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Ver inv.</button>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid #2a2a4a;margin:10px 0">
+    <div data-perm="dev" style="margin-bottom:8px">
+      <div style="font-size:10px;color:#a06bff;margin-bottom:3px">DAR ITEM (nome ou ID)</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px">
+        <input id="dev-item-chave" placeholder="nome ou ID" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-item-qtd" type="number" value="1" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('dar_item', document.getElementById('dev-item-chave').value, {qtd: document.getElementById('dev-item-qtd').value})" style="padding:7px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar</button>
+      </div>
+      <button onclick="devAcao('id_item', document.getElementById('dev-item-chave').value)" style="width:100%;margin-top:4px;padding:6px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Buscar ID do item</button>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <button onclick="devAcao('listar_itens')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Listar itens</button>
+      <button onclick="devAcao('listar_monstros')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Listar monstros</button>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px">
+      <div style="font-size:10px;color:#a06bff;margin-bottom:3px">CRIAR ITEM NOVO</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px">
+        <input id="dev-novo-nome" placeholder="nome" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-novo-tipo" value="arma" placeholder="tipo" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-novo-bonus" type="number" value="0" placeholder="bonus" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('criar_item', null, {nome: document.getElementById('dev-novo-nome').value, tipo: document.getElementById('dev-novo-tipo').value, bonus: document.getElementById('dev-novo-bonus').value})" style="padding:7px;background:#a06bff;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Criar</button>
+      </div>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div style="display:flex;gap:4px">
+        <input id="dev-xp" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('dar_xp', document.getElementById('dev-xp').value)" style="padding:6px 10px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+XP</button>
+      </div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-hp" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('setar_hp', document.getElementById('dev-hp').value)" style="padding:6px 10px;background:#4f4;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Set HP</button>
+      </div>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <button onclick="devAcao('invisivel')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Invisivel ON/OFF</button>
+      <button onclick="devAcao('noclip')" style="padding:7px;background:#333;color:#fff;border:1px solid #ff8;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Noclip ON/OFF</button>
     </div>
     <div id="dev-msg" style="display:none;background:#0a0a14;border:1px solid #a06bff;border-radius:4px;padding:7px;font-size:11px;color:#a06bff;margin-top:8px"></div>
   </div>
