@@ -27,7 +27,10 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png')}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png')}
 .sprite.monstro-slime{background-image:url('/static/sprites/monstros/slime.png')}
-.sprite.npc{background-image:url('/static/sprites/npc.png')}
+.sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png')}
+.sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png')}
+.sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png')}
+.sprite.npc{background-image:url('/static/sprites/npc-mercador.png')}
 .sprite.outro{border-radius:50%;box-shadow:0 0 8px #fff}
 .nome-ent{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;z-index:10;pointer-events:none;font-weight:bold}
 .hp-ent{position:absolute;top:-6px;left:8px;right:8px;height:4px;background:#000;border-radius:2px;z-index:10;overflow:hidden}
@@ -514,7 +517,8 @@ function render(j) {
       } else if (npcsSet[mx+","+my]) {
         const n = npcsSet[mx+","+my];
         const sp = document.createElement("div");
-        sp.className = "sprite npc";
+        const tipoNPC = (n[4] || "loja").toLowerCase();
+        sp.className = "sprite npc-" + tipoNPC;
         const nom = document.createElement("div");
         nom.className = "nome-ent";
         nom.style.color = "#ffee88";
