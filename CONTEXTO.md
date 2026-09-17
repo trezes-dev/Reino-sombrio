@@ -371,3 +371,11 @@ cat ~/rpg/CONTEXTO.md | termux-clipboard-set
 ---
 
 **FIM DO DOCUMENTO - Bom trabalho no Reino Sombrio!**
+
+### Sessão 17/09/2026 (madrugada - 02h45-03h)
+- Mini-mapa quadrado substituido por botao globo (estilo CoA)
+- Joystick fixo virou flutuante (aparece onde toca na metade esquerda da tela)
+- HP reposicionado acima da hotbar (estilo CoA)
+- Botoes de ataque/pocao com borda dourada e sprites pixel art
+- Mao de interagir condicional (so perto de NPC)
+- Proximo: botao "Vender" na loja + persistencia da hotbar pos reload

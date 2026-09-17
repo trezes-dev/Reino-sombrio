@@ -51,19 +51,18 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .btn-hud:active{transform:scale(0.9)}
 
 /* ==== HUD VIDA ==== */
-#hud-vida{position:absolute;bottom:8px;left:8px;background:rgba(20,15,30,0.9);border:2px solid #8a7a5a;border-radius:6px;padding:5px 10px;z-index:30;min-width:190px}
-#hud-vida .top{display:flex;align-items:center;gap:8px;font-size:10px;margin-bottom:3px}
-#hud-vida .lbl{color:#888}
-#hud-vida .val{font-weight:bold;color:#fff}
-.barra{width:100%;height:12px;background:#000;border:1px solid #444;border-radius:3px;overflow:hidden}
+#hud-vida{position:absolute;bottom:68px;left:50%;transform:translateX(-50%);background:rgba(20,15,30,0.85);border:2px solid #8a7a5a;border-radius:6px;padding:4px 8px;z-index:30;width:240px}
+#hud-vida .top{display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:2px}
+#hud-vida .lbl{color:#aaa}
+#hud-vida .val{font-weight:bold;color:#fff;font-size:10px}
+.barra{width:100%;height:10px;background:#0a0505;border:1px solid #444;border-radius:2px;overflow:hidden;position:relative}
 .barra .fill{height:100%;transition:width 0.3s}
-#hp-fill{background:linear-gradient(180deg,#ff5566,#c33)}
-.barra-xp{width:100%;height:5px;background:#000;border:1px solid #444;border-radius:3px;overflow:hidden;margin-top:3px}
+#hp-fill{background:linear-gradient(180deg,#ff4444,#a01010)}
+.barra-xp{width:100%;height:4px;background:#000;border:1px solid #444;border-radius:2px;overflow:hidden;margin-top:2px}
 .barra-xp .fill{height:100%;background:linear-gradient(90deg,#4af6ff,#a06bff);transition:width 0.3s}
 
 /* ==== MINI MAPA ==== */
-#minimapa-box{position:absolute;top:48px;right:8px;background:rgba(10,10,20,0.9);border:2px solid #c9a227;border-radius:6px;padding:3px;z-index:25;cursor:pointer}
-#minimapa-box:active{transform:scale(0.95)}
+#minimapa-box{display:none !important}
 #minimapa{display:grid;gap:0}
 #minimapa .mt{width:4px;height:4px;background:#1a1a2a}
 #minimapa .mt.g{background:#4a7c2a}
@@ -83,9 +82,10 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .slot.vazio{opacity:0.4;filter:grayscale(1)}
 
 /* ==== JOYSTICK ==== */
-#joystick{position:absolute;left:15px;bottom:75px;width:110px;height:110px;z-index:25;touch-action:none}
-#joy-base{position:absolute;inset:0;background-image:url('/static/ui/joystick_circle_pad_a.png');background-size:cover;opacity:0.6}
-#joy-thumb{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-24px 0 0 -24px;background-image:url('/static/ui/joystick_circle_nub_a.png');background-size:cover;opacity:0.9}
+#joystick{position:fixed;width:130px;height:130px;z-index:100;touch-action:none;display:none;pointer-events:none;transform:translate(-50%,-50%)}
+#joy-base{position:absolute;inset:0;background-image:url('/static/ui/joystick_circle_pad_a.png');background-size:cover;opacity:0.65}
+#joy-thumb{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;background-image:url('/static/ui/joystick_circle_nub_a.png');background-size:cover;opacity:0.9}
+#zona-joystick{position:fixed;left:0;top:0;width:50%;height:100%;z-index:24;touch-action:none}
 
 /* ==== BOTÕES DE AÇÃO ==== */
 
@@ -116,9 +116,10 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 
 .btn-acao{position:absolute;border-radius:50%;border:3px solid;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.5),inset 0 -4px 0 rgba(0,0,0,0.2),inset 0 4px 0 rgba(255,255,255,0.2);transition:transform 0.05s}
 .btn-acao:active{transform:scale(0.9)}
-#btn-ataque{right:25px;bottom:70px;width:95px;height:95px;background:radial-gradient(circle at 35% 30%,#ff7788,#c02030);border-color:#ff99aa}
+#btn-ataque{right:25px;bottom:70px;width:100px;height:100px;background:radial-gradient(circle at 35% 30%,#5a1010,#2a0808);border:4px solid #d4a04a;box-shadow:0 6px 0 #1a0404,0 8px 16px rgba(0,0,0,0.6),inset 0 4px 0 rgba(255,255,255,0.15)}
 #btn-ferramenta{right:130px;bottom:130px;width:62px;height:62px;background:radial-gradient(circle at 35% 30%,#ffe055,#a07000);border-color:#ffee88;font-size:24px}
-#btn-acao{right:130px;bottom:60px;width:62px;height:62px;background:radial-gradient(circle at 35% 30%,#55eeff,#106080);border-color:#88eeff;font-size:24px}
+#btn-acao{right:25px;bottom:190px;width:64px;height:64px;background:radial-gradient(circle at 35% 30%,#5a3010,#2a1808);border:3px solid #d4a04a;box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15);font-size:24px;display:none;animation:pulsar 1.2s infinite}
+@keyframes pulsar{0%,100%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 0 rgba(212,160,74,0.7)}50%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 12px rgba(212,160,74,0)}}
 </style>
 </head>
 <body>
@@ -139,12 +140,11 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
       <button class="btn-hud" onclick="abrirInv()" title="Inventário">🎒</button>
       <button class="btn-hud" onclick="abrirChat()" title="Chat">💬</button>
       <button class="btn-hud" onclick="abrirConfig()" title="Config">⚙️</button>
+      <button class="btn-hud" onclick="abrirMapaGrande()" title="Mapa" style="background:radial-gradient(circle at 35% 30%,#5a8ab0,#1a3a5a);border-color:#8ac0e0">🌍</button>
     </div>
   </div>
 
-  <div id="minimapa-box" onclick="abrirMapaGrande()">
-    <div id="minimapa"></div>
-  </div>
+  <div id="minimapa-box" style="display:none"><div id="minimapa"></div></div>
 
   <div id="log"></div>
 
@@ -161,13 +161,14 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 
   <div id="hotbar"></div>
 
+  <div id="zona-joystick"></div>
   <div id="joystick">
     <div id="joy-base"></div>
     <div id="joy-thumb"></div>
   </div>
 
-  <button id="btn-ataque" class="btn-acao" onclick="atacar()">⚔️</button>
-  <button id="btn-ferramenta" class="btn-acao" onclick="usarFerramenta()">🧪</button>
+  <button id="btn-ataque" class="btn-acao" onclick="atacar()"><img src="/static/sprites/itens/espada-aco.png" style="width:75%;height:75%;image-rendering:pixelated;pointer-events:none"></button>
+  <button id="btn-ferramenta" class="btn-acao" onclick="usarFerramenta()"><img src="/static/sprites/itens/pocao-vermelha.png" style="width:75%;height:75%;image-rendering:pixelated;pointer-events:none"></button>
   <button id="btn-acao" class="btn-acao" onclick="acaoInteragir()">✋</button>
 </div>
 
@@ -696,6 +697,15 @@ async function usarFerramenta() {
   if (j.msg) logMsg(j.msg);
   if (j.estado) render(j.estado);
 }
+function atualizarBotaoInteragir() {
+  if (!J) return;
+  const btn = document.getElementById("btn-acao");
+  if (!btn) return;
+  const adj = [[J.x, J.y], [J.x+1, J.y], [J.x-1, J.y], [J.x, J.y+1], [J.x, J.y-1]];
+  const temNPC = (J.npcs || []).some(n => adj.some(a => a[0] === n[2] && a[1] === n[3]));
+  btn.style.display = temNPC ? "flex" : "none";
+}
+setInterval(atualizarBotaoInteragir, 400);
 async function acaoInteragir() {
   const r = await fetch("/api/interagir");
   const j = await r.json();
@@ -709,20 +719,23 @@ async function acaoInteragir() {
 // ============ JOYSTICK ============
 (function() {
   const joy = document.getElementById("joystick");
-  if (!joy) return;
+  const zona = document.getElementById("zona-joystick");
+  if (!joy || !zona) return;
   const thumb = document.getElementById("joy-thumb");
   let ativo = false, idToque = null, cx = 0, cy = 0;
-  const raio = 40;
+  const raio = 55;
   let dirAtual = null;
   function resetar() {
     ativo = false; idToque = null;
+    joy.style.display = "none";
     thumb.style.transform = "translate(0,0)";
     dirAtual = null;
   }
   function start(px, py) {
-    const r = joy.getBoundingClientRect();
-    cx = r.left + r.width/2;
-    cy = r.top + r.height/2;
+    cx = px; cy = py;
+    joy.style.left = px + "px";
+    joy.style.top = py + "px";
+    joy.style.display = "block";
     ativo = true;
     movendo(px, py);
   }
@@ -731,23 +744,24 @@ async function acaoInteragir() {
     const dist = Math.hypot(dx, dy);
     if (dist > raio) { dx = dx/dist*raio; dy = dy/dist*raio; }
     thumb.style.transform = "translate(" + dx + "px, " + dy + "px)";
-    if (dist < 8) { dirAtual = null; return; }
+    if (dist < 10) { dirAtual = null; return; }
     if (Math.abs(dx) > Math.abs(dy)) dirAtual = dx > 0 ? "dir" : "esq";
     else dirAtual = dy > 0 ? "baixo" : "cima";
   }
-  joy.addEventListener("pointerdown", (e) => {
+  zona.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    if (ativo) return;
     idToque = e.pointerId;
-    joy.setPointerCapture(e.pointerId);
+    zona.setPointerCapture(e.pointerId);
     start(e.clientX, e.clientY);
   });
-  joy.addEventListener("pointermove", (e) => {
+  zona.addEventListener("pointermove", (e) => {
     if (!ativo || e.pointerId !== idToque) return;
     e.preventDefault();
     movendo(e.clientX, e.clientY);
   });
-  joy.addEventListener("pointerup", (e) => { if (e.pointerId === idToque) resetar(); });
-  joy.addEventListener("pointercancel", resetar);
+  zona.addEventListener("pointerup", (e) => { if (e.pointerId === idToque) resetar(); });
+  zona.addEventListener("pointercancel", resetar);
   setInterval(() => { if (ativo && dirAtual) mover(dirAtual); }, 200);
 })();
 // ============ MODAIS: abre/fecha ============
@@ -1029,7 +1043,8 @@ function abrirMapaGrande() {
       const mx = J.x - METADE + vx, my = J.y - METADE + vy;
       const tipo = (J.viewport[vy] && J.viewport[vy][vx]) || "grama";
       const d = document.createElement("div");
-      d.style.cssText = "width:" + tam + "px;height:" + tam + "px;background-image:url('/static/sprites/terreno/" + tipo + ".png');background-size:cover;image-rendering:pixelated;position:relative";
+      d.style.cssText = "width:" + tam + "px;height:" + tam + "px;background-image:url('/static/sprites/terreno/" + tipo + ".png');background-size:cover;image-rendering:pixelated;position:relative;cursor:pointer";
+      d.onclick = () => teleportarMapa(mx, my);
       if (mx === J.x && my === J.y) d.innerHTML = '<div style="position:absolute;inset:20%;background:#4af6ff;border-radius:50%;box-shadow:0 0 8px #4af6ff"></div>';
       else if (monsSet[mx+","+my]) d.innerHTML = '<div style="position:absolute;inset:25%;background:#ff4444;border-radius:50%"></div>';
       else if (npcsSet[mx+","+my]) d.innerHTML = '<div style="position:absolute;inset:25%;background:#ffd700;border-radius:50%"></div>';
@@ -1040,6 +1055,20 @@ function abrirMapaGrande() {
   abrirModal("modal-mapa");
 }
 function fecharMapaGrande() { fecharModal("modal-mapa"); }
+async function teleportarMapa(mx, my) {
+  if (!J) return;
+  const permitidos = ["admin", "dev"];
+  if (!permitidos.includes(J.cargo)) return;
+  if (!confirm("Teleportar para (" + mx + ", " + my + ")?")) return;
+  const r = await fetch("/api/dev/acao", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({acao: "teleporte", valor: null, x: mx, y: my})
+  });
+  const j = await r.json();
+  if (j.estado) render(j.estado);
+  fecharMapaGrande();
+}
 
 // ============ CONFIG ============
 function abrirConfig() { abrirModal("modal-config"); }
