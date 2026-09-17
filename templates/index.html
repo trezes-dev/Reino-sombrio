@@ -264,7 +264,8 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
     </div>
     <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
       <input id="dev-ouro" type="number" value="1000" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
-      <button onclick="devAcao('ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Ouro</button>
+      <button onclick="devAcao('ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+Ouro</button>
+      <button onclick="devAcao('setar_ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#c9a227;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Setar</button>
     </div>
     <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
       <input id="dev-nivel" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
@@ -569,10 +570,6 @@ function render(j) {
   const invPorId = {};
   itens.forEach(x => { invPorId[x[4]] = { nome: x[0], tipo: x[1], bonus: x[2], qtd: x[3], id: x[4] }; });
   let hbIds = j.hotbar || [];
-  if (!hbIds.some(x => x > 0)) {
-    hbIds = itens.slice(0, 8).map(x => x[4]);
-    while (hbIds.length < 8) hbIds.push(0);
-  }
   while (hbIds.length < 8) hbIds.push(0);
   for (let i = 0; i < 8; i++) {
     const slot = document.createElement("div");
@@ -830,10 +827,19 @@ function selecionarInv(item) {
     (tipo === "pocao" && qtd > 0 ? '<button onclick="usarPocaoInv()" style="flex:1;padding:8px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Usar</button>' : "") +
     ((tipo === "arma" || tipo === "escudo") && qtd > 0 ? '<button onclick="equiparItem(' + inv_id + ')" style="flex:1;padding:8px;background:' + (equipado ? '#a44' : '#4a4') + ';color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">' + (equipado ? 'Desequipar' : 'Equipar') + '</button>' : "") +
     (qtd <= 0 ? '<div style="flex:1;padding:8px;background:#3a0a0a;color:#ff8899;border-radius:6px;text-align:center;font-size:11px">Esgotado</div>' : "") +
+    (qtd > 0 ? '<button onclick="venderItem(' + inv_id + ')" style="flex:1;padding:8px;background:#c9a227;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Vender</button>' : "") +
     '<button onclick="porNaHotbar(' + id + ')" style="flex:1;padding:8px;background:#333;color:#eee;border:1px solid #555;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer">Hotbar</button></div>';
 }
 async function usarPocaoInv() { await usarFerramenta(); abrirInv(); }
 
+async function venderItem(invId) {
+  if (!confirm("Vender este item? Voce recebe metade do valor.")) return;
+  const r = await fetch("/api/vender/" + invId, {method: "POST"});
+  const j = await r.json();
+  if (j.estado) render(j.estado);
+  abrirInv();
+  logMsg(j.msg || "Vendido");
+}
 async function equiparItem(invId) {
   await fetch("/api/equipar/" + invId, {method: "POST"});
   const r = await fetch("/api/estado");
@@ -1112,60 +1118,219 @@ carregar();
 </script>
 
 <div id="modal-loja" class="modal">
-  <div class="modal-topo">
-    <h2 id="loja-titulo">🏪 LOJA</h2>
+  <div class="modal-topo" style="background:linear-gradient(180deg,#3a2a10,#1a1005);border-bottom:2px solid #c9a227">
+    <h2 id="loja-titulo" style="color:#ffd700;text-shadow:1px 1px 0 #000">🏪 MERCADOR</h2>
     <button onclick="fecharLoja()">Fechar</button>
   </div>
-  <div class="modal-corpo" style="background:#10142a;border:2px solid #c9a227;border-radius:6px;padding:14px">
-    <div id="loja-ouro" style="text-align:center;font-size:13px;color:#ffd700;margin-bottom:12px"></div>
-    <div id="loja-itens" style="display:flex;flex-direction:column;gap:6px"></div>
-    <div id="loja-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:8px;font-size:11px;color:#c9a227;margin-top:10px;text-align:center"></div>
+  <div class="modal-corpo" style="background:#1a1a0a;border:2px solid #c9a227;border-radius:6px;padding:10px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+      <button id="loja-aba-compra" onclick="mudarAbaLoja('compra')" style="flex:1;padding:8px;background:#c9a227;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">COMPRAR</button>
+      <button id="loja-aba-venda" onclick="mudarAbaLoja('venda')" style="flex:1;padding:8px;background:#3a2a10;color:#aaa;border:1px solid #c9a227;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">VENDER</button>
+    </div>
+    <div style="display:flex;gap:10px;flex:1;min-height:0">
+      <div id="loja-grade" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;overflow-y:auto;background:#0a0a05;border:1px solid #3a2a10;border-radius:4px;padding:6px;align-content:start;min-height:180px;max-height:280px"></div>
+      <div style="width:140px;background:#0a0a05;border:1px solid #3a2a10;border-radius:4px;padding:8px;display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <div id="loja-det-icone" style="text-align:center;font-size:36px;min-height:40px;display:flex;align-items:center;justify-content:center">—</div>
+        <div id="loja-det-nome" style="font-size:11px;color:#eee;font-weight:bold;text-align:center;min-height:14px">Selecione um item</div>
+        <div id="loja-det-info" style="font-size:9px;color:#888;text-align:center;min-height:12px"></div>
+        <div id="loja-det-preco" style="font-size:12px;color:#ffd700;text-align:center;font-weight:bold;min-height:14px"></div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:4px">
+          <button onclick="mudarQtdLoja(-1)" style="width:26px;height:26px;background:#3a2a10;color:#ffd700;border:1px solid #c9a227;border-radius:4px;font-family:inherit;font-size:14px;cursor:pointer;font-weight:bold">-</button>
+          <input id="loja-qtd" type="number" value="1" min="1" style="width:38px;padding:3px;background:#000;color:#fff;border:1px solid #3a2a10;border-radius:4px;font-family:inherit;font-size:11px;text-align:center">
+          <button onclick="mudarQtdLoja(1)" style="width:26px;height:26px;background:#3a2a10;color:#ffd700;border:1px solid #c9a227;border-radius:4px;font-family:inherit;font-size:14px;cursor:pointer;font-weight:bold">+</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+          <button onclick="setQtdLoja(1)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+1</button>
+          <button onclick="setQtdLoja(10)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+10</button>
+          <button onclick="setQtdLoja(100)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+100</button>
+          <button onclick="setQtdLoja(1000)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+1k</button>
+        </div>
+        <button id="loja-btn-acao" onclick="confirmarLoja()" disabled style="margin-top:auto;padding:9px;background:#333;color:#666;border:none;border-radius:6px;font-family:inherit;font-size:11px;font-weight:bold;cursor:not-allowed">COMPRAR</button>
+      </div>
+    </div>
+    <div id="loja-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#4aff66;margin-top:8px;text-align:center"></div>
+    <div id="loja-ouro" style="text-align:center;font-size:12px;color:#ffd700;margin-top:8px;font-weight:bold"></div>
   </div>
 </div>
 <script>
+let lojaAba = "compra";
+let lojaItemSel = null;
+let lojaItensCompra = [];
+let lojaItensVenda = [];
+
 async function abrirLoja(npcNome) {
-  document.getElementById("loja-titulo").textContent = "🏪 " + (npcNome || "LOJA");
+  document.getElementById("loja-titulo").textContent = "🏪 " + (npcNome || "MERCADOR").toUpperCase();
   document.getElementById("loja-msg").style.display = "none";
-  await carregarLoja();
+  lojaAba = "compra";
+  lojaItemSel = null;
+  mudarAbaLoja("compra");
   abrirModal("modal-loja");
 }
 
 function fecharLoja() { fecharModal("modal-loja"); }
 
+async function mudarAbaLoja(aba) {
+  lojaAba = aba;
+  lojaItemSel = null;
+  const btnC = document.getElementById("loja-aba-compra");
+  const btnV = document.getElementById("loja-aba-venda");
+  if (aba === "compra") {
+    btnC.style.background = "#c9a227"; btnC.style.color = "#0a0a1a"; btnC.style.border = "none";
+    btnV.style.background = "#3a2a10"; btnV.style.color = "#aaa"; btnV.style.border = "1px solid #c9a227";
+  } else {
+    btnV.style.background = "#c9a227"; btnV.style.color = "#0a0a1a"; btnV.style.border = "none";
+    btnC.style.background = "#3a2a10"; btnC.style.color = "#aaa"; btnC.style.border = "1px solid #c9a227";
+  }
+  limparDetalheLoja();
+  await carregarLoja();
+}
+
 async function carregarLoja() {
-  const r = await fetch("/api/loja/itens");
-  const itens = await r.json();
-  const cont = document.getElementById("loja-itens");
   const ouro = J ? J.ouro : 0;
   document.getElementById("loja-ouro").textContent = "💰 Seu ouro: " + ouro;
-  cont.innerHTML = "";
-  itens.forEach(it => {
-    const div = document.createElement("div");
-    div.style.cssText = "background:#0a0a14;border:1px solid #2a2a4a;border-radius:6px;padding:10px;display:flex;align-items:center;gap:10px;font-size:12px";
-    div.innerHTML =
-      '<div style="flex-shrink:0">' + iconeDe(it.nome, 40) + '</div>' +
-      '<div style="flex:1">' +
-        '<div style="font-weight:bold;color:#eee">' + it.nome + '</div>' +
-        '<div style="font-size:10px;color:#888">' + it.tipo + ' +' + it.bonus + '</div>' +
-      '</div>' +
-      '<div style="text-align:right">' +
-        '<div style="color:#ffd700;font-weight:bold">' + it.preco + '</div>' +
-        '<button onclick="comprarItem(' + it.id + ')" style="margin-top:4px;padding:5px 10px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:10px;font-weight:bold;cursor:pointer">Comprar</button>' +
-      '</div>';
-    cont.appendChild(div);
+  const grade = document.getElementById("loja-grade");
+  grade.innerHTML = "";
+  let itens = [];
+  if (lojaAba === "compra") {
+    const r = await fetch("/api/loja/itens");
+    lojaItensCompra = await r.json();
+    itens = lojaItensCompra;
+  } else {
+    lojaItensVenda = (J && J.inv) || [];
+    itens = lojaItensVenda;
+  }
+  if (!itens.length) {
+    grade.innerHTML = '<div style="grid-column:1/-1;padding:20px;text-align:center;color:#666;font-size:11px">' + (lojaAba === "compra" ? "Loja vazia" : "Inventario vazio") + '</div>';
+    return;
+  }
+  itens.forEach((it, idx) => {
+    const slot = document.createElement("div");
+    slot.style.cssText = "aspect-ratio:1;background:#1a1005;border:2px solid #3a2a10;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative";
+    let nome, icone, preco;
+    if (lojaAba === "compra") {
+      nome = it.nome; preco = it.preco;
+      icone = iconeDe(it.nome, 30);
+    } else {
+      nome = it[0]; preco = "?";
+      icone = iconeDe(it[0], 30);
+    }
+    slot.innerHTML = icone + '<span style="position:absolute;bottom:1px;right:3px;font-size:9px;color:#ffd700;font-weight:bold">' + (lojaAba === "venda" && it[3] ? "x" + it[3] : "") + '</span>';
+    slot.onclick = () => selecionarItemLoja(idx);
+    slot.dataset.idx = idx;
+    grade.appendChild(slot);
   });
 }
 
-async function comprarItem(lojaId) {
-  const r = await fetch("/api/comprar/" + lojaId);
-  const j = await r.json();
-  const msg = document.getElementById("loja-msg");
-  msg.textContent = j.msg;
-  msg.style.display = "block";
-  if (j.estado) {
-    render(j.estado);
-    document.getElementById("loja-ouro").textContent = "💰 Seu ouro: " + j.estado.ouro;
+function selecionarItemLoja(idx) {
+  document.querySelectorAll("#loja-grade > div").forEach(s => s.style.borderColor = "#3a2a10");
+  const slot = document.querySelector('#loja-grade > div[data-idx="' + idx + '"]');
+  if (slot) slot.style.borderColor = "#ffd700";
+  let nome, tipo, bonus, preco, qtdDisp;
+  if (lojaAba === "compra") {
+    const it = lojaItensCompra[idx];
+    nome = it.nome; tipo = it.tipo; bonus = it.bonus; preco = it.preco;
+    lojaItemSel = { tipo: "compra", id: it.id, nome: nome, preco: preco };
+  } else {
+    const it = lojaItensVenda[idx];
+    nome = it[0]; tipo = it[1]; bonus = it[2]; qtdDisp = it[3];
+    const invId = it[5];
+    const preco_loja = lojaItensCompra.find(x => x.nome === nome);
+    preco = preco_loja ? Math.max(1, Math.floor(preco_loja.preco / 2)) : (tipo === "arma" ? 10 : tipo === "escudo" ? 7 : 5);
+    lojaItemSel = { tipo: "venda", id: invId, nome: nome, preco: preco, qtdDisp: qtdDisp };
   }
+  document.getElementById("loja-det-icone").innerHTML = iconeDe(nome, 44);
+  document.getElementById("loja-det-nome").textContent = nome;
+  document.getElementById("loja-det-info").textContent = tipo + " +" + (bonus || 0);
+  document.getElementById("loja-det-preco").textContent = preco + " ouro";
+  document.getElementById("loja-qtd").value = 1;
+  atualizarBotaoLoja();
+}
+
+function limparDetalheLoja() {
+  document.getElementById("loja-det-icone").innerHTML = "—";
+  document.getElementById("loja-det-nome").textContent = "Selecione um item";
+  document.getElementById("loja-det-info").textContent = "";
+  document.getElementById("loja-det-preco").textContent = "";
+  document.getElementById("loja-qtd").value = 1;
+  const btn = document.getElementById("loja-btn-acao");
+  btn.textContent = lojaAba === "compra" ? "COMPRAR" : "VENDER";
+  btn.disabled = true;
+  btn.style.background = "#333";
+  btn.style.color = "#666";
+  btn.style.cursor = "not-allowed";
+}
+
+function atualizarBotaoLoja() {
+  const btn = document.getElementById("loja-btn-acao");
+  if (!lojaItemSel) { btn.disabled = true; return; }
+  const qtd = parseInt(document.getElementById("loja-qtd").value) || 1;
+  const total = lojaItemSel.preco * qtd;
+  const temOuro = (J.ouro || 0) >= total;
+  if (lojaAba === "compra") {
+    btn.textContent = "COMPRAR (" + total + ")";
+    btn.disabled = false;
+    if (temOuro) {
+      btn.style.background = "#4a7c2a"; btn.style.color = "#fff";
+    } else {
+      btn.style.background = "#c47a1a"; btn.style.color = "#fff";
+    }
+    btn.style.cursor = "pointer";
+  } else {
+    btn.textContent = "VENDER (" + total + " ouro)";
+    if (qtd > (lojaItemSel.qtdDisp || 0)) {
+      btn.disabled = true; btn.style.background = "#333"; btn.style.color = "#666"; btn.style.cursor = "not-allowed";
+    } else {
+      btn.disabled = false; btn.style.background = "#c9a227"; btn.style.color = "#0a0a1a"; btn.style.cursor = "pointer";
+    }
+  }
+}
+
+function mudarQtdLoja(delta) {
+  const inp = document.getElementById("loja-qtd");
+  let v = (parseInt(inp.value) || 1) + delta;
+  if (v < 1) v = 1;
+  inp.value = v;
+  atualizarBotaoLoja();
+}
+
+function setQtdLoja(qtd) {
+  document.getElementById("loja-qtd").value = qtd;
+  atualizarBotaoLoja();
+}
+
+document.addEventListener("input", (e) => {
+  if (e.target && e.target.id === "loja-qtd") atualizarBotaoLoja();
+});
+
+async function confirmarLoja() {
+  if (!lojaItemSel) return;
+  const qtd = parseInt(document.getElementById("loja-qtd").value) || 1;
+  const msg = document.getElementById("loja-msg");
+  if (lojaAba === "compra") {
+    const r = await fetch("/api/comprar/" + lojaItemSel.id, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({qtd: qtd})
+    });
+    const j = await r.json();
+    msg.textContent = j.msg;
+    msg.style.display = "block";
+    msg.style.color = j.msg && j.msg.indexOf("insuficiente") !== -1 ? "#ff5566" : "#4aff66";
+    if (j.estado) render(j.estado);
+  } else {
+    const r = await fetch("/api/vender/" + lojaItemSel.id, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({qtd: qtd})
+    });
+    const j = await r.json();
+    msg.textContent = j.msg;
+    msg.style.display = "block";
+    msg.style.color = "#4aff66";
+    if (j.estado) render(j.estado);
+  }
+  lojaItemSel = null;
+  limparDetalheLoja();
   await carregarLoja();
 }
 </script>

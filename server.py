@@ -706,10 +706,15 @@ def api_loja_itens():
     return jsonify([{"id": r[0], "preco": r[1], "regiao": r[2], "nome": r[3],
                      "tipo": r[4], "bonus": r[5], "item_id": r[6]} for r in rows])
 
-@app.route("/api/comprar/<int:loja_id>")
+@app.route("/api/comprar/<int:loja_id>", methods=["GET", "POST"])
 @login_obrigatorio
 def api_comprar(loja_id):
     jid = session["jogador_id"]
+    qtd = 1
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        try: qtd = max(1, int(data.get("qtd", 1)))
+        except: qtd = 1
     c = con()
     ouro = c.execute("SELECT ouro FROM jogador WHERE id=?", (jid,)).fetchone()[0]
     linha = c.execute("SELECT item_id, preco FROM loja_itens WHERE id=?", (loja_id,)).fetchone()
@@ -717,26 +722,27 @@ def api_comprar(loja_id):
         c.close()
         return jsonify({"msg": "Item nao existe"})
     item_id, preco = linha
-    if ouro < preco:
+    total = preco * qtd
+    if ouro < total:
         c.close()
         return jsonify({"msg": "Ouro insuficiente"})
     try:
         c.execute("BEGIN")
-        c.execute("UPDATE jogador SET ouro = ouro - ? WHERE id=?", (preco, jid))
+        c.execute("UPDATE jogador SET ouro = ouro - ? WHERE id=?", (total, jid))
         existe = c.execute("SELECT id, qtd FROM inventario WHERE jogador_id=? AND item_id=?",
                            (jid, item_id)).fetchone()
         if existe:
-            c.execute("UPDATE inventario SET qtd = qtd + 1 WHERE id=?", (existe[0],))
+            c.execute("UPDATE inventario SET qtd = qtd + ? WHERE id=?", (qtd, existe[0]))
         else:
-            c.execute("INSERT INTO inventario (jogador_id, item_id, qtd) VALUES (?, ?, 1)",
-                      (jid, item_id))
+            c.execute("INSERT INTO inventario (jogador_id, item_id, qtd) VALUES (?, ?, ?)",
+                      (jid, item_id, qtd))
         c.commit()
     except Exception as e:
         c.rollback()
         c.close()
         return jsonify({"msg": "Erro: " + str(e)})
     c.close()
-    return jsonify({"msg": "Comprado!", "estado": estado(jid)})
+    return jsonify({"msg": "Comprado x" + str(qtd) + "!", "estado": estado(jid)})
 
 
 
@@ -899,8 +905,16 @@ def api_dev_acao():
     elif acao == "ouro":
         try: v = int(valor)
         except: v = 0
-        c.execute("UPDATE jogador SET ouro=ouro+? WHERE id=?", (v, jid))
+        c.execute("UPDATE jogador SET ouro=MAX(0, ouro+?) WHERE id=?", (v, jid))
         msg = "+" + str(v) + " ouro"
+    elif acao == "setar_ouro":
+        if cargo != "dev":
+            c.close()
+            return jsonify({"erro": "Apenas dev"}), 403
+        try: v = max(0, int(valor))
+        except: v = 0
+        c.execute("UPDATE jogador SET ouro=? WHERE id=?", (v, jid))
+        msg = "Ouro = " + str(v)
     elif acao == "nivel":
         try: v = int(valor)
         except: v = 1
@@ -1076,6 +1090,45 @@ def api_dev_acao():
     c.commit()
     c.close()
     return jsonify({"msg": msg, "estado": estado(jid)})
+
+
+
+@app.route("/api/vender/<int:inv_id>", methods=["POST"])
+@login_obrigatorio
+def api_vender(inv_id):
+    jid = session["jogador_id"]
+    c = con()
+    row = c.execute("""SELECT inv.id, inv.jogador_id, inv.qtd, inv.item_id, i.nome, i.tipo
+        FROM inventario inv JOIN itens i ON i.id=inv.item_id
+        WHERE inv.id=?""", (inv_id,)).fetchone()
+    if not row:
+        c.close()
+        return jsonify({"msg": "Item nao encontrado", "estado": estado(jid)})
+    rid, dono, qtd, item_id, nome, tipo = row
+    if dono != jid:
+        c.close()
+        return jsonify({"msg": "Item nao e seu", "estado": estado(jid)})
+    if qtd <= 0:
+        c.close()
+        return jsonify({"msg": "Sem unidades para vender", "estado": estado(jid)})
+
+    preco_loja = c.execute("SELECT preco FROM loja_itens WHERE item_id=? ORDER BY preco ASC LIMIT 1", (item_id,)).fetchone()
+    if preco_loja:
+        valor_base = preco_loja[0]
+    else:
+        # Preco padrao por tipo (arma/escudo/pocao)
+        valor_base = {"arma": 20, "escudo": 15, "pocao": 10}.get(tipo, 10)
+
+    valor_venda = max(1, int(valor_base / 2))
+
+    if qtd == 1:
+        c.execute("DELETE FROM inventario WHERE id=?", (inv_id,))
+    else:
+        c.execute("UPDATE inventario SET qtd=qtd-1 WHERE id=?", (inv_id,))
+    c.execute("UPDATE jogador SET ouro=ouro+? WHERE id=?", (valor_venda, jid))
+    c.commit()
+    c.close()
+    return jsonify({"msg": "Vendeu " + nome + " por " + str(valor_venda) + " ouro", "estado": estado(jid)})
 
 if __name__ == "__main__":
     carregar_mapa()

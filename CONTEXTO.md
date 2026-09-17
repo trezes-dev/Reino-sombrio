@@ -379,3 +379,16 @@ cat ~/rpg/CONTEXTO.md | termux-clipboard-set
 - Botoes de ataque/pocao com borda dourada e sprites pixel art
 - Mao de interagir condicional (so perto de NPC)
 - Proximo: botao "Vender" na loja + persistencia da hotbar pos reload
+
+### Sessão 17/09/2026 (manhã - 08h-10h)
+- Loja estilo Curse of Aros (2 abas: COMPRAR / VENDER)
+- Grade 5 colunas x 6 linhas (30 slots), painel de detalhes à direita
+- Seletor de quantidade [- qtd +] com atalhos +1 / +10 / +100 / +1k
+- Botao COMPRAR sempre colorido (verde com ouro, laranja sem ouro)
+- Botao VENDER travado se qtd > disponivel
+- Rotas /api/comprar e /api/vender aceitam quantidade (POST)
+- Mensagens coloridas no feedback (verde/vermelha)
+- Bloqueio de compra sem ouro (backend + frontend)
+- Bug do auto-preenchimento da hotbar corrigido
+- Sistema de vendas: 50% do valor de loja, ou valor padrao por tipo
+- Proximo: sprite do jogador com arma na mao + mais NPCs (ferreiro, alquimista)
