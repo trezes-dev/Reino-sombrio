@@ -1138,9 +1138,5 @@ def api_vender(inv_id):
 
 if __name__ == "__main__":
     carregar_mapa()
-    c = con()
-    c.execute("DELETE FROM monstros")
-    c.commit()
-    c.close()
     import os
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
