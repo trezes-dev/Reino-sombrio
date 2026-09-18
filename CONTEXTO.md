@@ -418,3 +418,25 @@ cat ~/rpg/CONTEXTO.md | termux-clipboard-set
 - Frontend: class="sprite npc-{tipo}" para diferenciar visualmente
 - Backend: /api/loja/itens?npc_id=X filtra por NPC
 - Proximo: sprite do jogador com arma na mao / quests / drop de itens
+
+### Sessão 18/09/2026 (manhã - 07h-09h)
+- 3 slimes animados no jogo (CraftPix pack):
+  - Slime (verde) → monstro 'Slime'
+  - Goblin (azul) → monstro 'Goblin'
+  - Esqueleto (marrom) → monstro 'Esqueleto'
+- Animação via CSS (steps(6), background-size 384x256)
+- Bug do CSS que forçava goblin.png em todos os monstros corrigido
+- IA de movimento dos monstros (thread em background a cada 3s):
+  - Move 1 tile aleatório (cima/baixo/esq/dir)
+  - Não atravessa água (usa bloqueia())
+  - Não sobrepõe outro monstro
+- Polling do frontend reduzido de 3s pra 1s (movimento mais fluido)
+- ID dos monstros: 855 (Slime), 856 (Goblin), 857 (Esqueleto)
+- Removido DELETE automatico de monstros no boot do server
+- Proximas tarefas (ordem):
+  1. Area limitada (monstros nao saem de uma regiao) - adicionar colunas home_x, home_y, home_raio
+  2. Respawn automatico (monstro morto volta em 30s)
+  3. Sistema de nivel por monstro (Slime=1, Goblin=2, Esqueleto=3)
+  4. Agressividade (so ataca se nivel proximo)
+  5. Drop de itens ao morrer
+  6. Animacao de walk/attack (frames de movimento)

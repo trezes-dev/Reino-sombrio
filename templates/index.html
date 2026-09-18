@@ -22,7 +22,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .tile.terra{background-image:url('/static/sprites/terreno/terra.png')}
 
 /* ==== ENTIDADES ==== */
-.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3}
+.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
 .sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
@@ -1112,7 +1112,7 @@ async function devAcao(acao, valor, extra) {
 }
 
 // ============ POLLING ============
-setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 3000);
+setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 1000);
 setInterval(() => { if (document.hidden) return; carregarChat(false); }, 3000);
 window.addEventListener("resize", () => { if (J) render(J); });
 window.addEventListener("orientationchange", () => setTimeout(() => { if (J) render(J); }, 400));

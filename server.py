@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3, random, functools, time, json
+import sqlite3, random, functools, time, json, threading
 
 app = Flask(__name__)
 app.secret_key = "troque-essa-chave-por-algo-aleatorio-grande"
@@ -1136,7 +1136,33 @@ def api_vender(inv_id):
     c.close()
     return jsonify({"msg": "Vendeu " + nome + " por " + str(valor_venda) + " ouro", "estado": estado(jid)})
 
+
+
+def ia_monstros():
+    while True:
+        time.sleep(3)
+        try:
+            c = con()
+            monstros = c.execute("SELECT id, x, y FROM monstros").fetchall()
+            for mid, mx, my in monstros:
+                dx, dy = random.choice([(0,-1),(0,1),(-1,0),(1,0)])
+                nx, ny = mx + dx, my + dy
+                if nx < 0 or ny < 0 or nx >= W_MAP or ny >= H_MAP:
+                    continue
+                if bloqueia(nx, ny):
+                    continue
+                existe = c.execute("SELECT id FROM monstros WHERE x=? AND y=?", (nx, ny)).fetchone()
+                if existe:
+                    continue
+                c.execute("UPDATE monstros SET x=?, y=? WHERE id=?", (nx, ny, mid))
+            c.commit()
+            c.close()
+        except Exception as e:
+            print("Erro ia_monstros:", e)
+
 if __name__ == "__main__":
     carregar_mapa()
+    threading.Thread(target=ia_monstros, daemon=True).start()
+    print("IA de monstros iniciada")
     import os
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
