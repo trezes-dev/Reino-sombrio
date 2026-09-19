@@ -5,8 +5,8 @@ import sqlite3, random, functools, time, json, threading
 app = Flask(__name__)
 app.secret_key = "troque-essa-chave-por-algo-aleatorio-grande"
 DB = "rpg.db"
-W_MAP = 50
-H_MAP = 50
+W_MAP = 200
+H_MAP = 200
 VIEW = 15
 XP_MONSTRO = {"Goblin": 10, "Lobo": 15, "Esqueleto": 20, "Slime": 8}
 
@@ -32,7 +32,11 @@ CLASSES = {
 MAPA_CACHE = {}
 
 def con():
-    return sqlite3.connect(DB)
+    conn = sqlite3.connect(DB, timeout=10.0)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA busy_timeout=10000")
+    return conn
 
 def gerar_mapa():
     rnd = random.Random(12345)
@@ -103,7 +107,13 @@ def tile_em(x, y):
     return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
-    return tile_em(x, y) in ("agua",)
+    # Consulta o banco direto (cache pode estar desatualizado)
+    c = con()
+    row = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
+    c.close()
+    if not row:
+        return False  # sem tile = livre
+    return row[0] == "agua"
 
 def tem_perm(cargo, perm):
     if cargo not in CARGOS:
@@ -674,6 +684,7 @@ def api_mover(dir):
     hp, ouro, x, y, xp, nivel, hp_max = c.execute(
         "SELECT hp, ouro, x, y, xp, nivel, hp_max FROM jogador WHERE id=?", (jid,)).fetchone()
     nx, ny = x, y
+    print(f"🔵 MOVE: jid={jid} dir={dir} de({x},{y})", flush=True)
     if dir == "cima": ny -= 1
     if dir == "baixo": ny += 1
     if dir == "esq": nx -= 1
@@ -685,7 +696,6 @@ def api_mover(dir):
         c.close()
         return jsonify({"msg": "Bloqueado por " + tile_em(nx, ny), "estado": estado(jid)})
     x, y = nx, ny
-    c.execute("UPDATE jogador SET x=?, y=?, ultimo_visto=? WHERE id=?", (x, y, time.time(), jid))
     msg = "Andou para " + dir
     m = c.execute("SELECT id, nome, dano FROM monstros WHERE x=? AND y=?", (x, y)).fetchone()
     if m:
@@ -710,9 +720,12 @@ def api_mover(dir):
         if subiu:
             msg += "  LEVEL UP! Nv " + str(nivel)
         c.execute("DELETE FROM monstros WHERE id=?", (mid,))
-    c.execute("UPDATE jogador SET hp=?, ouro=?, xp=?, nivel=?, hp_max=? WHERE id=?",
-              (hp, ouro, xp, nivel, hp_max, jid))
+    c.execute("""UPDATE jogador 
+                 SET x=?, y=?, hp=?, ouro=?, xp=?, nivel=?, hp_max=?, ultimo_visto=? 
+                 WHERE id=?""",
+              (x, y, hp, ouro, xp, nivel, hp_max, time.time(), jid))
     c.commit()
+    print(f"✅ MOVE OK: nova pos=({x},{y})", flush=True)
     c.close()
     return jsonify({"msg": msg, "estado": estado(jid)})
 
@@ -870,6 +883,7 @@ def api_atacar():
     c.execute("UPDATE jogador SET hp=?, ouro=?, xp=?, nivel=?, hp_max=? WHERE id=?",
               (hp, ouro, xp, nivel, hp_max, jid))
     c.commit()
+    print(f"✅ MOVE OK: nova pos=({x},{y})", flush=True)
     c.close()
     return jsonify({"msg": msg, "estado": estado(jid)})
 
