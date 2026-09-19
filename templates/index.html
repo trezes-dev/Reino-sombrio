@@ -20,6 +20,12 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .tile.areia{background-image:url('/static/sprites/terreno/areia.png')}
 .tile.pedra{background-image:url('/static/sprites/terreno/pedra.png')}
 .tile.terra{background-image:url('/static/sprites/terreno/terra.png')}
+.tile.grama_lobby{background-image:url('/static/sprites/terreno/chao/grama_lobby.png')}
+.tile.grama_floresta{background-image:url('/static/sprites/terreno/chao/grama_normal.png')}
+.tile.grama_escura{background-image:url('/static/sprites/terreno/chao/grama_escura.png')}
+.tile.areia_deserto{background-image:url('/static/sprites/terreno/chao/areia_deserto.png')}
+.tile.pedra_ruinas{background-image:url('/static/sprites/terreno/chao/pedra_ruinas.png')}
+.tile.terra_caminho{background-image:url('/static/sprites/terreno/chao/terra_caminho.png')}
 
 /* ==== ENTIDADES ==== */
 .sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
@@ -65,19 +71,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .barra-xp{width:100%;height:4px;background:#000;border:1px solid #444;border-radius:2px;overflow:hidden;margin-top:2px}
 .barra-xp .fill{height:100%;background:linear-gradient(90deg,#4af6ff,#a06bff);transition:width 0.3s}
 
-/* ==== MINI MAPA ==== */
-#minimapa-box{display:none !important}
-#minimapa{display:grid;gap:0}
-#minimapa .mt{width:4px;height:4px;background:#1a1a2a}
-#minimapa .mt.g{background:#4a7c2a}
-#minimapa .mt.a{background:#2a5a8a}
-#minimapa .mt.s{background:#d4b86a}
-#minimapa .mt.p{background:#6a6a6a}
-#minimapa .mt.t{background:#5a3a1a}
-#minimapa .mt.player{background:#4af6ff;box-shadow:0 0 3px #4af6ff}
-#minimapa .mt.monstro{background:#ff4444}
-#minimapa .mt.npc{background:#ffd700}
-#minimapa .mt.outro{background:#fff}
+/* ==== MINI MAPA (CANVAS) ==== */
 
 /* ==== HOTBAR ==== */
 #hotbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:30;background:rgba(20,15,30,0.85);border:2px solid #8a7a5a;border-radius:8px;padding:4px}
@@ -148,7 +142,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
     </div>
   </div>
 
-  <div id="minimapa-box" style="display:none"><div id="minimapa"></div></div>
+  <div id="minimapa-box" style="display:none;position:absolute;top:60px;right:10px;z-index:1000;background:rgba(0,0,0,0.9);padding:5px;border-radius:5px;border:1px solid #444;"><img id="minimapa-img" src="/minimapa.png" style="width:200px;height:200px;image-rendering:pixelated;display:block;"><div style="color:#aaa;font-size:10px;text-align:center;margin-top:3px;">Toque para fechar</div></div>
 
   <div id="log"></div>
 
@@ -225,13 +219,16 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 </div>
 
 <!-- MODAL MAPA GRANDE -->
-<div id="modal-mapa" class="modal">
-  <div class="modal-topo">
+<div class="modal" id="modal-mapa">
+  <div class="modal-content" style="max-width:95vw;max-height:90vh;">
     <h2>🌍 MAPA</h2>
-    <button onclick="fecharMapaGrande()">Fechar</button>
-  </div>
-  <div style="flex:1;overflow:auto;display:flex;justify-content:center;align-items:center">
-    <div id="mapa-grande" style="display:grid;gap:1px;padding:8px;background:#1a1a0a;border:3px solid #c9a227;border-radius:6px"></div>
+    <div style="display:flex;justify-content:center;padding:10px;">
+      <img id="mapa-grande-img" src="/minimapa.png" style="width:min(85vw, 500px);height:min(85vw, 500px);image-rendering:pixelated;border:1px solid #444;border-radius:4px;">
+    </div>
+    <div style="color:#aaa;font-size:11px;text-align:center;margin-top:5px;">
+      Imagem do servidor • 200x200 tiles
+    </div>
+    <button onclick="fecharMapaGrande()" style="margin-top:10px;padding:8px 20px;background:#8b2020;color:#fff;border:none;border-radius:4px;cursor:pointer;">Fechar</button>
   </div>
 </div>
 
@@ -541,30 +538,12 @@ function render(j) {
     }
   }
 
-  // MINI MAPA
-  const raio = 12;
-  const mm = document.getElementById("minimapa");
-  mm.style.gridTemplateColumns = "repeat(" + (raio*2+1) + ", 4px)";
-  mm.innerHTML = "";
-  for (let yy = -raio; yy <= raio; yy++) {
-    for (let xx = -raio; xx <= raio; xx++) {
-      const mx = j.x + xx, my = j.y + yy;
-      const d = document.createElement("div");
-      d.className = "mt";
-      if (mx === j.x && my === j.y) d.className += " player";
-      else if (monsMap[mx+","+my]) d.className += " monstro";
-      else if (npcsSet[mx+","+my]) d.className += " npc";
-      else if (outrosMap[mx+","+my]) d.className += " outro";
-      else {
-        let tipo = null;
-        if (xx >= -METADE && xx <= METADE && yy >= -METADE && yy <= METADE) {
-          const vx = xx + METADE, vy = yy + METADE;
-          if (j.viewport[vy] && j.viewport[vy][vx]) tipo = j.viewport[vy][vx];
-        }
-        if (tipo) d.className += " " + (TIPO_MM[tipo] || "g");
-      }
-      mm.appendChild(d);
-    }
+  // MINI MAPA - Imagem gerada pelo servidor
+  if (window._mmContador === undefined) window._mmContador = 0;
+  window._mmContador++;
+  if (window._mmContador % 10 === 0) {
+    const img = document.getElementById("minimapa-img");
+    if (img) img.src = "/minimapa.png?t=" + Date.now();
   }
 
   // HOTBAR
@@ -1040,28 +1019,9 @@ async function removerAmigo(nome) { if (!confirm("Remover " + nome + "?")) retur
 // ============ MAPA GRANDE ============
 function abrirMapaGrande() {
   if (!J) return;
-  const g = document.getElementById("mapa-grande");
-  const tam = 32;
-  g.style.gridTemplateColumns = "repeat(" + VIEW + ", " + tam + "px)";
-  g.style.gridTemplateRows = "repeat(" + VIEW + ", " + tam + "px)";
-  g.innerHTML = "";
-  const monsSet = {}; (J.monstros||[]).forEach(m => monsSet[m[2]+","+m[3]] = m);
-  const npcsSet = {}; (J.npcs||[]).forEach(n => npcsSet[n[2]+","+n[3]] = n);
-  const outrosMap = {}; (J.outros||[]).forEach(o => outrosMap[o.x+","+o.y] = o);
-  for (let vy = 0; vy < VIEW; vy++) {
-    for (let vx = 0; vx < VIEW; vx++) {
-      const mx = J.x - METADE + vx, my = J.y - METADE + vy;
-      const tipo = (J.viewport[vy] && J.viewport[vy][vx]) || "grama";
-      const d = document.createElement("div");
-      d.style.cssText = "width:" + tam + "px;height:" + tam + "px;background-image:url('/static/sprites/terreno/" + tipo + ".png');background-size:cover;image-rendering:pixelated;position:relative;cursor:pointer";
-      d.onclick = () => teleportarMapa(mx, my);
-      if (mx === J.x && my === J.y) d.innerHTML = '<div style="position:absolute;inset:20%;background:#4af6ff;border-radius:50%;box-shadow:0 0 8px #4af6ff"></div>';
-      else if (monsSet[mx+","+my]) d.innerHTML = '<div style="position:absolute;inset:25%;background:#ff4444;border-radius:50%"></div>';
-      else if (npcsSet[mx+","+my]) d.innerHTML = '<div style="position:absolute;inset:25%;background:#ffd700;border-radius:50%"></div>';
-      else if (outrosMap[mx+","+my]) d.innerHTML = '<div style="position:absolute;inset:25%;background:#fff;border-radius:50%"></div>';
-      g.appendChild(d);
-    }
-  }
+  // Atualiza a imagem do minimapa com timestamp (força recarregar)
+  const img = document.getElementById("mapa-grande-img");
+  if (img) img.src = "/minimapa.png?t=" + Date.now();
   abrirModal("modal-mapa");
 }
 function fecharMapaGrande() { fecharModal("modal-mapa"); }

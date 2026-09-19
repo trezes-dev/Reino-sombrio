@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, session, url_for
+from flask import send_file, Flask, render_template, jsonify, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3, random, functools, time, json, threading
 
@@ -476,6 +476,79 @@ def executar_troca(jid, args):
     return f"Troca #{tid} aberta com {alvo[1] or alvo[2]}"
 
 # ============ AUTH ============
+
+
+
+@app.route('/minimapa.png')
+def minimapa_png():
+    """Gera uma imagem PNG do mapa completo com posições dos jogadores/monstros/NPCs."""
+    from PIL import Image, ImageDraw
+    import io
+    
+    # Cores dos tiles
+    CORES = {
+        'grama_lobby':    (144, 238, 144),
+        'grama_floresta': (34, 139, 34),
+        'grama_escura':   (0, 100, 0),
+        'areia_deserto':  (238, 214, 175),
+        'pedra_ruinas':   (105, 105, 105),
+        'terra_caminho':  (160, 82, 45),
+    }
+    
+    conn = sqlite3.connect('rpg.db')
+    cursor = conn.cursor()
+    
+    # Cria imagem 200x200 (1 pixel por tile)
+    img = Image.new('RGB', (200, 200), (20, 20, 30))
+    pixels = img.load()
+    
+    # Desenha os tiles do mapa
+    cursor.execute("SELECT x, y, tipo FROM mapa_tiles")
+    for x, y, tipo in cursor.fetchall():
+        if 0 <= x < 200 and 0 <= y < 200:
+            pixels[x, y] = CORES.get(tipo, (100, 100, 100))
+    
+    # Desenha NPCs (amarelo)
+    cursor.execute("SELECT x, y FROM npcs")
+    for x, y in cursor.fetchall():
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                if 0 <= x+dx < 200 and 0 <= y+dy < 200:
+                    pixels[x+dx, y+dy] = (255, 215, 0)
+    
+    # Desenha monstros (vermelho)
+    cursor.execute("SELECT x, y FROM monstros")
+    for x, y in cursor.fetchall():
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                if 0 <= x+dx < 200 and 0 <= y+dy < 200:
+                    pixels[x+dx, y+dy] = (255, 50, 50)
+    
+    # Desenha jogadores (ciano)
+    cursor.execute("SELECT x, y FROM jogador WHERE personagem_criado = 1")
+    for x, y in cursor.fetchall():
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                if 0 <= x+dx < 200 and 0 <= y+dy < 200:
+                    pixels[x+dx, y+dy] = (74, 246, 255)
+    
+    conn.close()
+    
+    # Converte para PNG em memória
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
+@app.route('/api/mapa_completo')
+def api_mapa_completo():
+    conn = sqlite3.connect('rpg.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT x, y, tipo FROM mapa_tiles")
+    tiles = {f"{r['x']},{r['y']}": r['tipo'] for r in cursor.fetchall()}
+    conn.close()
+    return jsonify(tiles)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
