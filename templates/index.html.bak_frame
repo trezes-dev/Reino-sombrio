@@ -59,7 +59,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite/* .monstro-slime removido */
-to{background-position:-384px 0}}
+@keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
 .sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png')}
 .sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png')}
 .sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png')}
@@ -172,29 +172,20 @@ body{background:#1a3a5a;}
 
 
 
-to{background-position:-240px 0}}
+@keyframes monstroIdle40{from{background-position:0 0}to{background-position:-240px 0}}
 
 
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-to{background-position:-240px 0}}
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-
-
-/* === SLIMES COLORIDOS (mesmo tamanho do original) === */
-.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-@keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
+/* === SLIMES COLORIDOS === */
+.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, .sprite.monstro-slime-vermelho{
+    background-size:240px 160px !important;
+    background-position:0 0 !important;
+    background-repeat:no-repeat !important;
+    animation:monstroIdle40 1s steps(6) infinite !important;
+}
+.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=5')}
+.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=5')}
+.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=5')}
+@keyframes monstroIdle40{from{background-position:0 0}to{background-position:-240px 0}}
 
 </style>
 </head>

@@ -5,10 +5,9 @@ import sqlite3, random, functools, time, json, threading
 app = Flask(__name__)
 app.secret_key = "troque-essa-chave-por-algo-aleatorio-grande"
 DB = "rpg.db"
-W_MAP = 200
-H_MAP = 200
-VIEW = 41
-METADE = VIEW // 2
+W_MAP = 172
+H_MAP = 314
+VIEW = 15
 XP_MONSTRO = {"Goblin": 10, "Lobo": 15, "Esqueleto": 20, "Slime": 8}
 
 CARGOS = {
@@ -108,29 +107,13 @@ def tile_em(x, y):
     return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
-    """Retorna True se o tile está bloqueado (não pode andar)."""
+    # Consulta o banco direto (cache pode estar desatualizado)
     c = con()
-    # 1. Verifica o chão (água, vazio)
     row = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
-    if not row:
-        c.close()
-        return True  # Fora do mapa = bloqueado
-    tipo_chao = row[0]
-    if tipo_chao in ("agua", "vazio"):
-        c.close()
-        return True
-    # 2. Verifica objetos com colisão
-    obj = c.execute("SELECT subtipo FROM mapa_objetos WHERE x=? AND y=?", (x, y)).fetchone()
     c.close()
-    if obj:
-        subtipo = obj[0]
-        # Árvores e pedras bloqueiam, flores não
-        if subtipo in ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore', 
-                       'pinheiro', 'pinheiro_pequeno', 'arbusto_grande',
-                       'pedra', 'pedra_areia', 'pilar', 'estatua', 'entulho'):
-            return True
-    return False
-
+    if not row:
+        return False  # sem tile = livre
+    return row[0] == "agua"
 
 def tem_perm(cargo, perm):
     if cargo not in CARGOS:

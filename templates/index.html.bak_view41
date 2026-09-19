@@ -58,8 +58,8 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite/* .monstro-slime removido */
-to{background-position:-384px 0}}
+.sprite.monstro-slime{background-image:url('/static/sprites/monstros/slime.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
+@keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
 .sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png')}
 .sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png')}
 .sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png')}
@@ -144,58 +144,6 @@ to{background-position:-384px 0}}
 #btn-ferramenta{right:130px;bottom:130px;width:62px;height:62px;background:radial-gradient(circle at 35% 30%,#ffe055,#a07000);border-color:#ffee88;font-size:24px}
 #btn-acao{right:25px;bottom:190px;width:64px;height:64px;background:radial-gradient(circle at 35% 30%,#5a3010,#2a1808);border:3px solid #d4a04a;box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15);font-size:24px;display:none;animation:pulsar 1.2s infinite}
 @keyframes pulsar{0%,100%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 0 rgba(212,160,74,0.7)}50%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 12px rgba(212,160,74,0)}}
-body{background:#1a3a5a;}
-
-
-
-
-
-
-
-
-
-.monstro-slime-verde, .monstro-slime-azul, 
-
-
-
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-to{background-position:-240px 0}}
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-to{background-position:-240px 0}}
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-
-
-/* === SLIMES COLORIDOS (mesmo tamanho do original) === */
-.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-@keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
-
 </style>
 </head>
 <body>
@@ -440,11 +388,9 @@ let ultimoId = 0, naoLidas = 0, chatAberto = false, slotEditando = -1;
 let _movendo = false, _ultimoMover = 0, _ultimoDir = null;
 let _animFrame = 0, _animTimer = 0, _atacando = 0, _ultimoAnim = 0;
 
-const TILE_PX = 40;
-const W_MAP = 200;
-const H_MAP = 200;
-const VIEW = 41;
-const METADE = 20;
+const TILE_PX = 48;
+const VIEW = 31;
+const METADE = 15;
 const EMOJI_ITEM = {
   "Espada Curta": "🗡️", "Adaga Enferrujada": "🔪", "Cajado": "🪄",
   "Arco Curto": "🏹", "Escudo de Madeira": "🛡️", "Armadura de Couro": "🥼",
@@ -528,18 +474,6 @@ async function carregarObjetosMapa() {
     }
 }
 
-
-function spriteMonstro(nome) {
-    nome = (nome || '').toLowerCase();
-    if (nome.includes('azul'))     return 'monstro-slime-azul';
-    if (nome.includes('vermelho')) return 'monstro-slime-vermelho';
-    if (nome.includes('verde'))    return 'monstro-slime-verde';
-    if (nome.includes('slime'))    return 'monstro-slime-verde';
-    if (nome.includes('goblin'))   return 'monstro-goblin';
-    if (nome.includes('esqueleto'))return 'monstro-esqueleto';
-    return 'monstro-slime-verde';
-}
-
 function render(j) {
   if (!j) return;
   J = j;
@@ -602,7 +536,7 @@ function render(j) {
       } else if (monsMap[mx+","+my]) {
         const m = monsMap[mx+","+my];
         const sp = document.createElement("div");
-        sp.className = "sprite " + spriteMonstro(m[1]);
+        sp.className = "sprite monstro-" + (m[1] || "goblin").toLowerCase();
         const hp = document.createElement("div");
         hp.className = "hp-ent";
         const mhpPct = Math.max(0, Math.min(100, (m[4] / (m[4] + 20)) * 100));
