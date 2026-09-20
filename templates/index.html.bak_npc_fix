@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a14">
+<title>Reino Sombrio MMORPG</title>
+<link rel="manifest" href="/static/manifest.json">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff;font-family:monospace;position:fixed;touch-action:none}
+#tela{position:fixed;inset:0;overflow:hidden}
+
+/* ==== MAPA ==== */
+#camera{position:absolute;inset:0;overflow:hidden}
+#mapa{position:relative;position:absolute;top:0;left:0;display:grid;will-change:transform}
+.tile{width:64px;height:64px;background-size:cover;background-position:center;image-rendering:pixelated;position:relative}
+.tile.grama{background-image:url('/static/sprites/terreno/grama.png')}
+.tile.agua{background-image:url('/static/sprites/terreno/agua.png')}
+.tile.areia{background-image:url('/static/sprites/terreno/areia.png')}
+.tile.pedra{background-image:url('/static/sprites/terreno/pedra.png')}
+.tile.terra{background-image:url('/static/sprites/terreno/terra.png')}
+.tile.grama_lobby{background-image:url('/static/sprites/terreno/chao/grama_lobby.png')}
+.tile.grama_floresta{background-image:url('/static/sprites/terreno/chao/grama_normal.png')}
+.tile.grama_escura{background-image:url('/static/sprites/terreno/chao/grama_escura.png')}
+.tile.areia_deserto{background-image:url('/static/sprites/terreno/chao/areia_deserto.png')}
+.tile.pedra_ruinas{background-image:url('/static/sprites/terreno/chao/pedra_ruinas.png')}
+.tile.terra_caminho{background-image:url('/static/sprites/terreno/chao/terra_caminho.png')}
+/* === OBJETOS DO MAPA (v2) === */
+.tile.obj-arvore_grande{background-image:url('/static/sprites/terreno/arvores/arvore_grande.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-arvore_escura{background-image:url('/static/sprites/terreno/arvores/arvore_escura.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-arvore_media{background-image:url('/static/sprites/terreno/arvores/arvore_media.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-arvore{background-image:url('/static/sprites/terreno/arvores/arvore_grande.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-pinheiro{background-image:url('/static/sprites/terreno/arvores/pinheiro.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-pinheiro_pequeno{background-image:url('/static/sprites/terreno/arvores/pinheiro_pequeno.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-cogumelo{background-image:url('/static/sprites/terreno/arvores/cogumelo.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-cacto{background-image:url('/static/sprites/terreno/arvores/cogumelo.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-fogueira{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Fire_animation.png');background-size:contain;background-repeat:no-repeat;background-position:center}
+.tile.obj-barril{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_simple1_1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-flor_azul{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_blue_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-flor_rosa{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_pink_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-flor_laranja{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_orange_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+.tile.obj-flor_vermelha{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_red_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
+
+
+.obj-fogueira{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Fire_animation.png');background-size:contain;background-repeat:no-repeat;background-position:center}
+.obj-barril{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_simple1_1.png')}
+.obj-bandeira{background-image:url('/static/sprites/terreno/lobby/usaveis/Autumn_bush1.png')}
+.obj-flor_azul{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_blue_flowers1.png')}
+.obj-flor_rosa{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_pink_flowers1.png')}
+.obj-flor_laranja{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_orange_flowers1.png')}
+.obj-flor_vermelha{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_red_flowers1.png')}
+.obj-arvore_borda{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Trees_grass_alternative_fit.png');background-size:contain;background-repeat:no-repeat}
+
+
+/* ==== ENTIDADES ==== */
+.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
+.sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
+.sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
+.sprite/* .monstro-slime removido */
+to{background-position:-384px 0}}
+.sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png')}
+.sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png')}
+.sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png')}
+.sprite.npc{background-image:url('/static/sprites/npc-mercador.png')}
+.sprite.outro{border-radius:50%;box-shadow:0 0 8px #fff}
+.nome-ent{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;z-index:10;pointer-events:none;font-weight:bold}
+.hp-ent{position:absolute;top:-6px;left:8px;right:8px;height:4px;background:#000;border-radius:2px;z-index:10;overflow:hidden}
+.hp-ent .fill{height:100%;background:#c33;transition:width 0.2s}
+.hp-ent.player-hp .fill{background:#4af}
+
+/* ==== DANO FLUTUANTE ==== */
+.dano-flut{position:absolute;font-size:14px;font-weight:bold;color:#ff4466;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;animation:sobe 1s ease-out forwards;pointer-events:none;z-index:20}
+.dano-flut.cur{color:#4f4}
+.dano-flut.xp{color:#ffd700}
+@keyframes sobe{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+
+/* ==== HUD TOPO ==== */
+#hud-topo{position:absolute;top:0;left:0;right:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:4px 8px;z-index:30;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)}
+#hud-topo .info{display:flex;align-items:center;gap:6px;background:rgba(20,15,30,0.85);border:2px solid #5a4a3a;border-radius:8px;padding:3px 10px;font-size:11px}
+#hud-nome{font-weight:bold}
+#hud-nivel{color:#ffd700;font-weight:bold}
+#hud-ouro{color:#ffd700}
+#hud-topo .botoes{display:flex;gap:5px;pointer-events:auto}
+.btn-hud{width:36px;height:36px;border-radius:50%;background:rgba(20,15,30,0.9);border:2px solid #8a7a5a;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.btn-hud:active{transform:scale(0.9)}
+
+/* ==== HUD VIDA ==== */
+#hud-vida{position:absolute;bottom:68px;left:50%;transform:translateX(-50%);background:rgba(20,15,30,0.85);border:2px solid #8a7a5a;border-radius:6px;padding:4px 8px;z-index:30;width:240px}
+#hud-vida .top{display:flex;align-items:center;gap:6px;font-size:9px;margin-bottom:2px}
+#hud-vida .lbl{color:#aaa}
+#hud-vida .val{font-weight:bold;color:#fff;font-size:10px}
+.barra{width:100%;height:10px;background:#0a0505;border:1px solid #444;border-radius:2px;overflow:hidden;position:relative}
+.barra .fill{height:100%;transition:width 0.3s}
+#hp-fill{background:linear-gradient(180deg,#ff4444,#a01010)}
+.barra-xp{width:100%;height:4px;background:#000;border:1px solid #444;border-radius:2px;overflow:hidden;margin-top:2px}
+.barra-xp .fill{height:100%;background:linear-gradient(90deg,#4af6ff,#a06bff);transition:width 0.3s}
+
+/* ==== MINI MAPA (CANVAS) ==== */
+
+/* ==== HOTBAR ==== */
+#hotbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:30;background:rgba(20,15,30,0.85);border:2px solid #8a7a5a;border-radius:8px;padding:4px}
+.slot{width:44px;height:44px;background:rgba(40,30,20,0.9);border:2px solid #6a5a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer}
+.slot .qtd{position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000}
+.slot.vazio{opacity:0.4;filter:grayscale(1)}
+
+/* ==== JOYSTICK ==== */
+#joystick{position:fixed;width:130px;height:130px;z-index:100;touch-action:none;display:none;pointer-events:none;transform:translate(-50%,-50%)}
+#joy-base{position:absolute;inset:0;background-image:url('/static/ui/joystick_circle_pad_a.png');background-size:cover;opacity:0.65}
+#joy-thumb{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;background-image:url('/static/ui/joystick_circle_nub_a.png');background-size:cover;opacity:0.9}
+#zona-joystick{position:fixed;left:0;top:0;width:50%;height:100%;z-index:24;touch-action:none}
+
+/* ==== BOTÕES DE AÇÃO ==== */
+
+
+
+
+
+
+
+
+
+
+/* ==== LOG ==== */
+#log{position:absolute;top:50px;left:8px;background:rgba(0,0,0,0.75);border-left:3px solid #4af6ff;padding:4px 10px;border-radius:4px;font-size:11px;color:#8fff8f;max-width:280px;z-index:25;opacity:0;transition:opacity 0.3s}
+#log.vis{opacity:1}
+
+/* ==== MODAIS ==== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:100;display:none;flex-direction:column;padding:14px;overflow-y:auto;font-family:monospace}
+.modal.aberto{display:flex}
+.modal-topo{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal-topo h2{margin:0;font-size:14px;color:#4af6ff}
+.modal-topo button{padding:6px 12px;background:#222;color:#ff5566;border:1px solid #ff5566;border-radius:6px;cursor:pointer;font-family:inherit;font-size:11px}
+.modal-corpo{max-width:500px;width:100%;margin:auto}
+
+
+
+
+
+.btn-acao{position:absolute;border-radius:50%;border:3px solid;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.5),inset 0 -4px 0 rgba(0,0,0,0.2),inset 0 4px 0 rgba(255,255,255,0.2);transition:transform 0.05s}
+.btn-acao:active{transform:scale(0.9)}
+#btn-ataque{right:25px;bottom:70px;width:100px;height:100px;background:radial-gradient(circle at 35% 30%,#5a1010,#2a0808);border:4px solid #d4a04a;box-shadow:0 6px 0 #1a0404,0 8px 16px rgba(0,0,0,0.6),inset 0 4px 0 rgba(255,255,255,0.15)}
+#btn-ferramenta{right:130px;bottom:130px;width:62px;height:62px;background:radial-gradient(circle at 35% 30%,#ffe055,#a07000);border-color:#ffee88;font-size:24px}
+#btn-acao{right:25px;bottom:190px;width:64px;height:64px;background:radial-gradient(circle at 35% 30%,#5a3010,#2a1808);border:3px solid #d4a04a;box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15);font-size:24px;display:none;animation:pulsar 1.2s infinite}
+@keyframes pulsar{0%,100%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 0 rgba(212,160,74,0.7)}50%{box-shadow:0 4px 0 #1a0a04,0 6px 12px rgba(0,0,0,0.5),inset 0 3px 0 rgba(255,255,255,0.15),0 0 0 12px rgba(212,160,74,0)}}
+body{background:#1a3a5a;}
+
+
+
+
+
+
+
+
+
+}
+
+
+
+}
+
+
+
+to{background-position:-384px 0}}
+
+
+/* === DROPS NO CHÃO === */
+.drop-chao{
+    position:absolute;
+    width:40px;height:40px;
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    z-index:4;
+    pointer-events:none;
+    animation:dropFloat 1.5s ease-in-out infinite;
+    filter:drop-shadow(0 0 4px gold);
+}
+@keyframes dropFloat{
+    0%, 100%{transform:translateY(0)}
+    50%{transform:translateY(-4px)}
+}
+.drop-fly{
+    position:fixed;
+    width:40px;height:40px;
+    background-size:contain;
+    background-repeat:no-repeat;
+    z-index:9999;
+    pointer-events:none;
+    transition:all 1.2s ease-out;
+}
+
+
+/* === SLIMES COLORIDOS (CSS ÚNICO) === */
+.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-dourado{background-image:url('/static/sprites/monstros/slime_dourado.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+@keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
+
+</style>
+</head>
+<body>
+
+<div id="tela">
+  <div id="camera">
+    <div id="mapa"></div>
+  </div>
+
+  <div id="hud-topo">
+    <div class="info">
+      <span id="hud-nome">...</span>
+      <span id="hud-nivel">Nv 1</span>
+      <span id="hud-ouro">💰 0</span>
+    </div>
+    <div class="botoes">
+      <button class="btn-hud" onclick="abrirPerfil()" title="Perfil">👤</button>
+      <button class="btn-hud" onclick="abrirInv()" title="Inventário">🎒</button>
+      <button class="btn-hud" onclick="abrirChat()" title="Chat">💬</button>
+      <button class="btn-hud" onclick="abrirConfig()" title="Config">⚙️</button>
+      <button class="btn-hud" onclick="abrirMapaGrande()" title="Mapa" style="background:radial-gradient(circle at 35% 30%,#5a8ab0,#1a3a5a);border-color:#8ac0e0">🌍</button>
+    </div>
+  </div>
+
+  <div id="minimapa-box" style="display:none;position:absolute;top:60px;right:10px;z-index:1000;background:rgba(0,0,0,0.9);padding:5px;border-radius:5px;border:1px solid #444;"><img id="minimapa-img" src="/minimapa.png" style="width:200px;height:200px;image-rendering:pixelated;display:block;"><div style="color:#aaa;font-size:10px;text-align:center;margin-top:3px;">Toque para fechar</div></div>
+
+  <div id="log"></div>
+
+  <div id="hud-vida">
+    <div class="top">
+      <span class="lbl">HP</span>
+      <span class="val" id="hp-txt">100/100</span>
+      <span class="lbl" style="margin-left:auto">XP</span>
+      <span class="val" id="xp-txt">0/100</span>
+    </div>
+    <div class="barra"><div class="fill" id="hp-fill" style="width:100%"></div></div>
+    <div class="barra-xp"><div class="fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+
+  <div id="hotbar"></div>
+
+  <div id="zona-joystick"></div>
+  <div id="joystick">
+    <div id="joy-base"></div>
+    <div id="joy-thumb"></div>
+  </div>
+
+  <button id="btn-ataque" class="btn-acao" onclick="atacar()"><img src="/static/sprites/itens/espada-aco.png" style="width:75%;height:75%;image-rendering:pixelated;pointer-events:none"></button>
+  <button id="btn-ferramenta" class="btn-acao" onclick="usarFerramenta()"><img src="/static/sprites/itens/pocao-vermelha.png" style="width:75%;height:75%;image-rendering:pixelated;pointer-events:none"></button>
+  <button id="btn-acao" class="btn-acao" onclick="acaoInteragir()">✋</button>
+</div>
+
+<!-- MODAL CHAT -->
+<div id="modal-chat" class="modal">
+  <div class="modal-topo">
+    <h2>💬 CHAT GLOBAL</h2>
+    <button onclick="fecharChat()">Fechar</button>
+  </div>
+  <div id="chat-msgs" style="flex:1;overflow-y:auto;background:#0a0a14;border:1px solid #2a2a3a;border-radius:6px;padding:8px;font-size:12px;line-height:1.5"></div>
+  <div style="display:flex;gap:6px;margin-top:8px">
+    <input id="chat-input" placeholder="msg ou /ajuda" maxlength="200" onkeydown="if(event.key==='Enter')enviarChat()" style="flex:1;padding:10px;background:#05070f;color:#4af6ff;border:2px solid #2a3050;font-family:inherit;font-size:12px;border-radius:6px;outline:none">
+    <button onclick="enviarChat()" style="padding:10px 16px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:bold">Enviar</button>
+  </div>
+</div>
+
+<!-- MODAL INVENTÁRIO -->
+<div id="modal-inv" class="modal">
+  <div class="modal-topo">
+    <h2>🎒 INVENTÁRIO</h2>
+    <button onclick="fecharInv()">Fechar</button>
+  </div>
+  <div class="modal-corpo">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <div id="inv-grid" style="display:grid;grid-template-columns:repeat(5,52px);gap:6px"></div>
+      <div id="inv-info" style="background:#0a0a14;border:1px solid #2a2a3a;border-radius:6px;padding:10px;flex:1;min-width:200px;max-width:260px;font-size:12px">
+        <h3 style="margin:0 0 8px;font-size:12px;color:#4af6ff">Selecione um item</h3>
+        <div id="inv-info-conteudo"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL -->
+<div id="modal-perfil" class="modal">
+  <div class="modal-topo">
+    <h2>👤 PERSONAGEM</h2>
+    <button onclick="fecharPerfil()">Fechar</button>
+  </div>
+  <div class="modal-corpo">
+    <div style="display:flex;background:#0a0a14;border:2px solid #a06bff;border-radius:6px;overflow:hidden">
+      <button id="tab-personagem" onclick="mudarTabPerfil('personagem')" style="flex:1;padding:10px 4px;background:transparent;color:#a06bff;border:none;border-bottom:2px solid #a06bff;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">👤 PERFIL</button>
+      <button id="tab-guilda" onclick="mudarTabPerfil('guilda')" style="flex:1;padding:10px 4px;background:transparent;color:#666;border:none;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">🛡️ GUILDA</button>
+      <button id="tab-amigos" onclick="mudarTabPerfil('amigos')" style="flex:1;padding:10px 4px;background:transparent;color:#666;border:none;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">👥 AMIGOS</button>
+    </div>
+    <div id="tab-conteudo-personagem" style="padding:14px;background:#10142a;border:2px solid #a06bff;border-top:none;border-radius:0 0 6px 6px"></div>
+    <div id="tab-conteudo-guilda" style="padding:14px;background:#10142a;border:2px solid #a06bff;border-top:none;border-radius:0 0 6px 6px;display:none"></div>
+    <div id="tab-conteudo-amigos" style="padding:14px;background:#10142a;border:2px solid #a06bff;border-top:none;border-radius:0 0 6px 6px;display:none"></div>
+  </div>
+</div>
+
+<!-- MODAL MAPA GRANDE -->
+<div class="modal" id="modal-mapa">
+  <div class="modal-content" style="max-width:95vw;max-height:90vh;">
+    <h2>🌍 MAPA</h2>
+    <div style="display:flex;justify-content:center;padding:10px;">
+      <img id="mapa-grande-img" src="/minimapa.png" style="width:min(85vw, 500px);height:min(85vw, 500px);image-rendering:pixelated;border:1px solid #444;border-radius:4px;">
+    </div>
+    <div style="color:#aaa;font-size:11px;text-align:center;margin-top:5px;">
+      Imagem do servidor • 200x200 tiles
+    </div>
+    <button onclick="fecharMapaGrande()" style="margin-top:10px;padding:8px 20px;background:#8b2020;color:#fff;border:none;border-radius:4px;cursor:pointer;">Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL CONFIG -->
+<div id="modal-config" class="modal">
+  <div class="modal-topo">
+    <h2>⚙️ CONFIGURAÇÕES</h2>
+    <button onclick="fecharConfig()">Fechar</button>
+  </div>
+  <div class="modal-corpo" style="background:#10142a;border:2px solid #8a7a5a;border-radius:6px;padding:16px">
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">🔊 Volume</label>
+      <input type="range" min="0" max="100" value="70" style="width:100%">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">🎵 Música</label>
+      <input type="range" min="0" max="100" value="50" style="width:100%">
+    </div>
+    <hr style="border:none;border-top:1px solid #2a2a4a;margin:14px 0">
+    <button onclick="sairJogo()" style="width:100%;padding:10px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer">Sair da conta</button>
+  </div>
+</div>
+
+<!-- MODAL CONSOLE DEV -->
+<div id="modal-dev" class="modal">
+  <div class="modal-topo">
+    <h2>👑 CONSOLE</h2>
+    <button onclick="fecharDev()">Fechar</button>
+  </div>
+  <div class="modal-corpo" style="background:#1a0a2a;border:2px solid #a06bff;border-radius:6px;padding:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <button data-perm="dev" onclick="devAcao('god')" style="padding:9px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:5px;font-family:inherit;font-size:11px;cursor:pointer">God ON/OFF</button>
+      <button data-perm="ajudante,mod,admin,dev" onclick="devAcao('curar')" style="padding:9px;background:#333;color:#fff;border:1px solid #4f4;border-radius:5px;font-family:inherit;font-size:11px;cursor:pointer">Curar</button>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
+      <input id="dev-ouro" type="number" value="1000" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <button onclick="devAcao('ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+Ouro</button>
+      <button onclick="devAcao('setar_ouro', document.getElementById('dev-ouro').value)" style="padding:6px 10px;background:#c9a227;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Setar</button>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
+      <input id="dev-nivel" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <button onclick="devAcao('nivel', document.getElementById('dev-nivel').value)" style="padding:6px 10px;background:#a06bff;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Nível</button>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
+      <input id="dev-dano" type="number" value="50" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <button onclick="devAcao('dano', document.getElementById('dev-dano').value)" style="padding:6px 10px;background:#ff5566;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dano</button>
+    </div>
+    <div data-perm="admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
+      <input id="dev-speed" type="number" value="2" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <button onclick="devAcao('speed', document.getElementById('dev-speed').value)" style="padding:6px 10px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Speed</button>
+    </div>
+    <div data-perm="ajudante,mod,admin,dev" style="margin-bottom:8px;display:flex;gap:4px">
+      <input id="dev-x" type="number" value="5" placeholder="x" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <input id="dev-y" type="number" value="5" placeholder="y" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      <button onclick="devAcao('teleporte', null, {x: document.getElementById('dev-x').value, y: document.getElementById('dev-y').value})" style="padding:6px 10px;background:#4f4;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Ir</button>
+    </div>
+    <hr style="border:none;border-top:1px solid #2a2a4a;margin:10px 0">
+    <div data-perm="mod,admin,dev" style="margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px;margin-bottom:4px">
+        <input id="dev-mob-nome" value="Dragao" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-mob-hp" type="number" value="500" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-mob-dano" type="number" value="50" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+      </div>
+      <button onclick="devAcao('spawn_perto', null, {mob_nome: document.getElementById('dev-mob-nome').value, mob_hp: document.getElementById('dev-mob-hp').value, mob_dano: document.getElementById('dev-mob-dano').value})" style="width:100%;padding:7px;background:#c33;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Spawnar mob</button>
+    </div>
+    <div data-perm="mod,admin,dev" style="margin-bottom:8px">
+      <input id="dev-alvo" placeholder="nome do jogador" style="width:100%;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;margin-bottom:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <button onclick="devAcao('banir', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#c33;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Banir</button>
+        <button onclick="devAcao('dar_cargo', null, {alvo: document.getElementById('dev-alvo').value, novo_cargo: 'vip'})" style="padding:7px;background:#ffd700;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar VIP</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+        <button onclick="devAcao('kickar', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#c93;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Kickar</button>
+        <button onclick="devAcao('ver_inventario', null, {alvo: document.getElementById('dev-alvo').value})" style="padding:7px;background:#39c;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Ver inv.</button>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid #2a2a4a;margin:10px 0">
+    <div data-perm="dev" style="margin-bottom:8px">
+      <div style="font-size:10px;color:#a06bff;margin-bottom:3px">DAR ITEM (nome ou ID)</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px">
+        <input id="dev-item-chave" placeholder="nome ou ID" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-item-qtd" type="number" value="1" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('dar_item', document.getElementById('dev-item-chave').value, {qtd: document.getElementById('dev-item-qtd').value})" style="padding:7px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Dar</button>
+      </div>
+      <button onclick="devAcao('id_item', document.getElementById('dev-item-chave').value)" style="width:100%;margin-top:4px;padding:6px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Buscar ID do item</button>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <button onclick="devAcao('listar_itens')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Listar itens</button>
+      <button onclick="devAcao('listar_monstros')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Listar monstros</button>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px">
+      <div style="font-size:10px;color:#a06bff;margin-bottom:3px">CRIAR ITEM NOVO</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px">
+        <input id="dev-novo-nome" placeholder="nome" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-novo-tipo" value="arma" placeholder="tipo" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <input id="dev-novo-bonus" type="number" value="0" placeholder="bonus" style="padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('criar_item', null, {nome: document.getElementById('dev-novo-nome').value, tipo: document.getElementById('dev-novo-tipo').value, bonus: document.getElementById('dev-novo-bonus').value})" style="padding:7px;background:#a06bff;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Criar</button>
+      </div>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div style="display:flex;gap:4px">
+        <input id="dev-xp" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('dar_xp', document.getElementById('dev-xp').value)" style="padding:6px 10px;background:#4af6ff;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+XP</button>
+      </div>
+      <div style="display:flex;gap:4px">
+        <input id="dev-hp" type="number" value="100" style="flex:1;padding:6px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit">
+        <button onclick="devAcao('setar_hp', document.getElementById('dev-hp').value)" style="padding:6px 10px;background:#4f4;color:#000;border:none;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Set HP</button>
+      </div>
+    </div>
+    <div data-perm="dev" style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <button onclick="devAcao('invisivel')" style="padding:7px;background:#333;color:#fff;border:1px solid #a06bff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Invisivel ON/OFF</button>
+      <button onclick="devAcao('noclip')" style="padding:7px;background:#333;color:#fff;border:1px solid #ff8;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Noclip ON/OFF</button>
+    </div>
+    <div id="dev-msg" style="display:none;background:#0a0a14;border:1px solid #a06bff;border-radius:4px;padding:7px;font-size:11px;color:#a06bff;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MODAL PICKER (hotbar) -->
+<div id="modal-picker" class="modal">
+  <div class="modal-topo">
+    <h2>Escolher item</h2>
+    <button onclick="fecharPicker()">Cancelar</button>
+  </div>
+  <div id="picker-lista" style="display:flex;flex-direction:column;gap:6px;max-width:400px;width:100%;margin:auto"></div>
+</div>
+
+<script>
+// ============ ESTADO GLOBAL ============
+let J = null;
+let ultimoId = 0, naoLidas = 0, chatAberto = false, slotEditando = -1;
+let _movendo = false, _ultimoMover = 0, _ultimoDir = null;
+let _animFrame = 0, _animTimer = 0, _atacando = 0, _ultimoAnim = 0;
+
+const TILE_PX = 40;
+const W_MAP = 200;
+const H_MAP = 200;
+const VIEW = 41;
+const METADE = 20;
+const EMOJI_ITEM = {
+  "Espada Curta": "🗡️", "Adaga Enferrujada": "🔪", "Cajado": "🪄",
+  "Arco Curto": "🏹", "Escudo de Madeira": "🛡️", "Armadura de Couro": "🥼",
+  "Poção de Cura": "🧪"
+};
+
+const SPRITE_ITEM = {
+  "Espada Curta": "/static/sprites/itens/espada-aco.png",
+  "Adaga Enferrujada": "/static/sprites/itens/adaga.png",
+  "Cajado": "/static/sprites/itens/cajado.png",
+  "Arco Curto": "/static/sprites/itens/arco.png",
+  "Escudo de Madeira": "/static/sprites/itens/escudo-madeira.png",
+  "Armadura de Couro": "/static/sprites/itens/escudo.png",
+  "Poção de Cura": "/static/sprites/itens/pocao-vermelha.png",
+  "Poção de Mana": "/static/sprites/itens/pocao-azul.png",
+  "Machado": "/static/sprites/itens/machado.png",
+  "Lança": "/static/sprites/itens/lanca.png"
+};
+
+function spriteDe(nome) { return SPRITE_ITEM[nome] || null; }
+
+function iconeDe(nome, tam) {
+  tam = tam || 32;
+  const url = spriteDe(nome);
+  if (url) return '<img src="' + url + '" width="' + tam + '" height="' + tam + '" style="image-rendering:pixelated;vertical-align:middle" alt="' + nome + '">';
+  return emojiDe(nome);
+}
+const EMOJI_CLASSE = { "cavaleiro": "⚔️ Cavaleiro", "arqueiro": "🏹 Arqueiro", "mago": "🔮 Mago" };
+const SPRITE_CLASSE = {
+  "cavaleiro": "/static/sprites/player/baixo-0.png",
+  "arqueiro": "/static/sprites/player/baixo-0.png",
+  "mago": "/static/sprites/player/baixo-0.png"
+};
+const TIPO_MM = { "grama": "g", "agua": "a", "areia": "s", "pedra": "p", "arvore": "t", "terra": "t" };
+const PERM_CARGO = {
+  "curar": ["ajudante","mod","admin","dev"],
+  "teleporte": ["ajudante","mod","admin","dev"],
+  "mobs_listar": ["mod","admin","dev"],
+  "mobs_limpar": ["mod","admin","dev"],
+  "spawn_perto": ["mod","admin","dev"],
+  "banir": ["mod","admin","dev"],
+  "ouro": ["admin","dev"],
+  "nivel": ["admin","dev"],
+  "dano": ["admin","dev"],
+  "speed": ["admin","dev"],
+  "guilda_set": ["admin","dev"],
+  "god": ["dev"]
+};
+
+function emojiDe(nome) { return EMOJI_ITEM[nome] || "📦"; }
+
+function logMsg(t) {
+  const el = document.getElementById("log");
+  el.textContent = t;
+  el.classList.add("vis");
+  clearTimeout(window._logT);
+  window._logT = setTimeout(() => el.classList.remove("vis"), 2500);
+}
+
+function danoFlut(mx, my, txt, tipo) {
+  if (!J) return;
+  const mapa = document.getElementById("mapa");
+  const el = document.createElement("div");
+  el.className = "dano-flut" + (tipo ? " " + tipo : "");
+  el.textContent = txt;
+  el.style.left = ((mx - (J.x - METADE)) * TILE_PX + TILE_PX/4) + "px";
+  el.style.top = ((my - (J.y - METADE)) * TILE_PX + TILE_PX/4) + "px";
+  mapa.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ============ RENDER ============
+
+
+async function pegarDrop(dropId) {
+    try {
+        const res = await fetch('/api/pegar_drop/' + dropId, {method: 'POST'});
+        const data = await res.json();
+        if (!data.ok) return;
+        // Animação: item voa até a hotbar
+        const dropEl = document.querySelector('.drop-chao[data-drop-id="' + dropId + '"]');
+        if (dropEl) {
+            const rect = dropEl.getBoundingClientRect();
+            const fly = document.createElement('div');
+            fly.className = 'drop-fly';
+            fly.style.backgroundImage = dropEl.style.backgroundImage;
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            document.body.appendChild(fly);
+            // Move para o inventário (canto superior direito)
+            setTimeout(() => {
+                fly.style.left = (window.innerWidth - 100) + 'px';
+                fly.style.top = '100px';
+                fly.style.width = '20px';
+                fly.style.height = '20px';
+                fly.style.opacity = '0';
+            }, 50);
+            setTimeout(() => fly.remove(), 1500);
+        }
+    } catch(e) { console.error(e); }
+}
+
+
+
+async function pegarDropChao(dropId) {
+    try {
+        const res = await fetch('/api/pegar_drop/' + dropId, {method: 'POST'});
+        const data = await res.json();
+        if (!data.ok) {
+            console.log('Drop falhou:', data.msg);
+            return;
+        }
+        // Animação: elemento voa até a hotbar
+        const el = document.querySelector('.drop-chao[data-drop-id="' + dropId + '"]');
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            const fly = document.createElement('div');
+            fly.style.cssText = 'position:fixed;width:36px;height:36px;background:url(' + el.style.backgroundImage.slice(5, -2) + ') center/contain no-repeat;left:' + rect.left + 'px;top:' + rect.top + 'px;z-index:9999;pointer-events:none;transition:all 1s ease-out;filter:drop-shadow(0 0 6px gold)';
+            document.body.appendChild(fly);
+            setTimeout(() => {
+                fly.style.left = (window.innerWidth - 80) + 'px';
+                fly.style.top = '80px';
+                fly.style.opacity = '0';
+                fly.style.transform = 'scale(0.3)';
+            }, 30);
+            setTimeout(() => fly.remove(), 1100);
+        }
+        // Remove localmente (será atualizado no próximo polling)
+        window._dropsChao = window._dropsChao.filter(d => d.id !== dropId);
+        // Recarrega o inventário
+        setTimeout(() => { if (typeof carregarEstado === 'function') carregarEstado(); }, 1100);
+    } catch(e) { console.error(e); }
+}
+
+async function carregarDropsChao() {
+    try {
+        const r = await fetch('/api/drops_chao');
+        window._dropsChao = await r.json();
+    } catch(e) { window._dropsChao = []; }
+}
+
+async function carregarObjetosMapa() {
+    try {
+        const res = await fetch('/api/objetos');
+        window._objetosMapa = await res.json();
+        const r2 = await fetch('/api/drops_chao');
+        window._dropsChao = await r2.json();
+        console.log("Objetos carregados:", window._objetosMapa.length);
+    } catch (e) {
+        console.error("Erro objetos:", e);
+    }
+}
+
+
+function spriteMonstro(nome) {
+    nome = (nome || '').toLowerCase();
+    if (nome.includes('azul'))     return 'monstro-slime-azul';
+    if (nome.includes('vermelho')) return 'monstro-slime-vermelho';
+    if (nome.includes('verde'))    return 'monstro-slime-verde';
+    if (nome.includes('slime'))    return 'monstro-slime-verde';
+    if (nome.includes('goblin'))   return 'monstro-goblin';
+    if (nome.includes('esqueleto'))return 'monstro-esqueleto';
+    return 'monstro-slime-verde';
+}
+
+
+function spriteDropItem(nome) {
+    nome = (nome || '').toLowerCase();
+    if (nome.includes('cura') || nome.includes('vermelha')) return '/static/sprites/itens/pocao-vermelha.png';
+    if (nome.includes('mana') || nome.includes('azul')) return '/static/sprites/itens/pocao-azul.png';
+    if (nome.includes('veneno') || nome.includes('verde')) return '/static/sprites/itens/pocao-verde.png';
+    if (nome.includes('adaga') && nome.includes('magic')) return '/static/sprites/itens/adaga-magica.png';
+    if (nome.includes('adaga')) return '/static/sprites/itens/adaga.png';
+    if (nome.includes('espada') && nome.includes('gelo')) return '/static/sprites/itens/espada-gelo.png';
+    if (nome.includes('espada') && nome.includes('fogo')) return '/static/sprites/itens/espada-fogo.png';
+    if (nome.includes('espada') && nome.includes('sombria')) return '/static/sprites/itens/espada-sombria.png';
+    if (nome.includes('espada') && nome.includes('veneno')) return '/static/sprites/itens/espada-veneno.png';
+    if (nome.includes('espada')) return '/static/sprites/itens/espada-aco.png';
+    if (nome.includes('cajado')) return '/static/sprites/itens/cajado.png';
+    if (nome.includes('arco')) return '/static/sprites/itens/arco.png';
+    if (nome.includes('escudo')) return '/static/sprites/itens/escudo-madeira.png';
+    if (nome.includes('machado')) return '/static/sprites/itens/machado.png';
+    if (nome.includes('lanca')) return '/static/sprites/itens/lanca.png';
+    return '/static/sprites/itens/pocao-vermelha.png';
+}
+
+
+// === PREDIÇÃO DE MOVIMENTO (evita lag visual) ===
+window._predMovendo = false;
+
+function moverPreditivo(dir) {
+    if (!J) return null;
+    const passo = {cima:[0,-1],baixo:[0,1],esq:[-1,0],dir:[1,0]}[dir];
+    if (!passo) return null;
+    const novoX = Math.max(0, Math.min(W_MAP - 1, J.x + passo[0]));
+    const novoY = Math.max(0, Math.min(H_MAP - 1, J.y + passo[1]));
+    // Se não mudou (bateu no limite), não envia
+    if (novoX === J.x && novoY === J.y) return null;
+    J.x = novoX;
+    J.y = novoY;
+    _ultimoMover = Date.now();  // ← Marca que andou (ativa animação)
+    // Renderiza IMEDIATAMENTE (sem esperar servidor)
+    render(J);
+    // Envia pro servidor em BACKGROUND (não bloqueia)
+    // Throttle: só envia pro servidor a cada 80ms
+    const agora = Date.now();
+    if (!window._ultimoEnvioServidor || agora - window._ultimoEnvioServidor > 80) {
+        window._ultimoEnvioServidor = agora;
+        fetch('/api/mover/' + dir).then(r => r.json()).then(j => {
+        if (j.msg) logMsg(j.msg);
+        // Se o servidor recusou (bloqueou), corrige a posição
+        if (j.estado) {
+            J.x = j.estado.x;
+            J.y = j.estado.y;
+        }
+        }).catch(e => console.error('mover:', e));
+    }
+    return null;
+}
+
+function render(j) {
+  if (!j) return;
+  J = j;
+  const cor = j.cargo_cor || j.cor || "#4af";
+
+  // HUD TOPO
+  document.getElementById("hud-nome").innerHTML = '<span style="color:' + cor + '">' + (j.cargo_badge||"") + ' ' + j.nome + '</span>';
+  document.getElementById("hud-nivel").textContent = "Nv " + j.nivel;
+  document.getElementById("hud-ouro").textContent = "💰 " + j.ouro;
+
+  // HUD VIDA
+  const hpPct = Math.max(0, Math.min(100, (j.hp / j.hp_max) * 100));
+  document.getElementById("hp-fill").style.width = hpPct + "%";
+  document.getElementById("hp-txt").textContent = j.hp + "/" + j.hp_max;
+  const xpProx = Math.floor(100 * Math.pow(j.nivel, 1.5));
+  document.getElementById("xp-fill").style.width = Math.min(100, (j.xp/xpProx)*100) + "%";
+  document.getElementById("xp-txt").textContent = j.xp + "/" + xpProx;
+
+  // MAPA
+  const mapa = document.getElementById("mapa");
+  mapa.style.gridTemplateColumns = "repeat(" + VIEW + ", " + TILE_PX + "px)";
+  mapa.style.gridTemplateRows = "repeat(" + VIEW + ", " + TILE_PX + "px)";
+  const centroX = window.innerWidth / 2;
+  const centroY = window.innerHeight / 2;
+  const offsetX = Math.round(centroX - (METADE * TILE_PX + TILE_PX / 2));
+  const offsetY = Math.round(centroY - (METADE * TILE_PX + TILE_PX / 2));
+  mapa.style.transform = "translate(" + offsetX + "px, " + offsetY + "px)";
+  mapa.innerHTML = "";
+
+  const monsMap = {};
+  (j.monstros || []).forEach(m => { monsMap[m[2]+","+m[3]] = m; });
+  const npcsSet = {};
+  (j.npcs || []).forEach(n => { npcsSet[n[2]+","+n[3]] = n; });
+  const outrosMap = {};
+  (j.outros || []).forEach(o => { outrosMap[o.x+","+o.y] = o; });
+
+  for (let vy = 0; vy < VIEW; vy++) {
+    for (let vx = 0; vx < VIEW; vx++) {
+      const mx = j.x - METADE + vx;
+      const my = j.y - METADE + vy;
+      const tipo = (j.viewport[vy] && j.viewport[vy][vx]) || "grama";
+      const d = document.createElement("div");
+      d.className = "tile " + tipo;
+
+      if (mx === j.x && my === j.y) {
+        const sp = document.createElement("div");
+        sp.className = "sprite player";
+        sp.id = "sprite-player";
+        sp.style.backgroundImage = "url('/static/sprites/jogador/idle-" + (_ultimoDir || "baixo") + "-0.png')";
+        const hp = document.createElement("div");
+        hp.className = "hp-ent player-hp";
+        hp.innerHTML = '<div class="fill" style="width:' + hpPct + '%"></div>';
+        sp.appendChild(hp);
+        const nom = document.createElement("div");
+        nom.className = "nome-ent";
+        nom.style.color = cor;
+        nom.textContent = (j.cargo_badge ? j.cargo_badge + " " : "") + j.nome;
+        sp.appendChild(nom);
+        d.appendChild(sp);
+      } else if (monsMap[mx+","+my]) {
+        const m = monsMap[mx+","+my];
+        const sp = document.createElement("div");
+        sp.className = "sprite " + spriteMonstro(m[1]);
+        const hp = document.createElement("div");
+        hp.className = "hp-ent";
+        const mhpPct = Math.max(0, Math.min(100, (m[4] / (m[4] + 20)) * 100));
+        hp.innerHTML = '<div class="fill" style="width:' + mhpPct + '%"></div>';
+        sp.appendChild(hp);
+        const nom = document.createElement("div");
+        nom.className = "nome-ent";
+        nom.style.color = "#ffcccc";
+        nom.textContent = m[1] + " (" + m[4] + ")";
+        sp.appendChild(nom);
+        d.appendChild(sp);
+      } else if (npcsSet[mx+","+my]) {
+        const n = npcsSet[mx+","+my];
+        const sp = document.createElement("div");
+        const tipoNPC = (n[4] || "loja").toLowerCase();
+        sp.className = "sprite npc-" + tipoNPC;
+        const nom = document.createElement("div");
+        nom.className = "nome-ent";
+        nom.style.color = "#ffee88";
+        nom.textContent = n[1];
+        sp.appendChild(nom);
+        d.appendChild(sp);
+      } else if (outrosMap[mx+","+my]) {
+        const o = outrosMap[mx+","+my];
+        const sp = document.createElement("div");
+        sp.className = "sprite outro";
+        sp.style.background = o.cor;
+        const nom = document.createElement("div");
+        nom.className = "nome-ent";
+        nom.style.color = o.cor;
+        nom.textContent = (o.badge ? o.badge + " " : "") + o.nome;
+        sp.appendChild(nom);
+        d.appendChild(sp);
+      }
+      mapa.appendChild(d);
+    }
+  }
+
+  // === OBJETOS DO MAPA (fogueira, flores, barris, árvores) ===
+  if (window._objetosMapa && window._objetosMapa.length > 0) {
+    window._objetosMapa.forEach(obj => {
+      const dx = obj.x - j.x;
+      const dy = obj.y - j.y;
+      if (Math.abs(dx) > METADE || Math.abs(dy) > METADE) return;
+      
+      const obj_div = document.createElement("div");
+      obj_div.className = "tile obj-" + obj.subtipo;
+      obj_div.style.position = "absolute";
+      obj_div.style.left = ((obj.x - (j.x - METADE)) * TILE_PX) + "px";
+      obj_div.style.top = ((obj.y - (j.y - METADE)) * TILE_PX) + "px";
+      obj_div.style.width = TILE_PX + "px";
+      obj_div.style.height = TILE_PX + "px";
+      obj_div.style.backgroundSize = "contain";
+      obj_div.style.backgroundRepeat = "no-repeat";
+      obj_div.style.backgroundPosition = "center";
+      obj_div.style.pointerEvents = "none";
+      obj_div.style.zIndex = "5";
+      mapa.appendChild(obj_div);
+    });
+  }
+
+  // === DROPS NO CHÃO ===
+  if (window._dropsChao && window._dropsChao.length > 0) {
+    window._dropsChao.forEach(drop => {
+      const dx = drop.x - j.x;
+      const dy = drop.y - j.y;
+      if (Math.abs(dx) > METADE || Math.abs(dy) > METADE) return;
+      const drop_div = document.createElement("div");
+      drop_div.className = "drop-chao";
+      drop_div.style.left = ((drop.x - (j.x - METADE)) * TILE_PX + 2) + "px";
+      drop_div.style.top = ((drop.y - (j.y - METADE)) * TILE_PX + 2) + "px";
+      drop_div.style.backgroundImage = "url('" + spriteDropItem(drop.item) + "')";
+      drop_div.dataset.dropId = drop.id;
+      drop_div.onclick = (e) => { e.stopPropagation(); pegarDropChao(drop.id); };
+      mapa.appendChild(drop_div);
+    });
+  }
+
+  // MINI MAPA - Imagem gerada pelo servidor
+  if (window._mmContador === undefined) window._mmContador = 0;
+  window._mmContador++;
+  if (window._mmContador % 10 === 0) {
+    const img = document.getElementById("minimapa-img");
+    if (img) img.src = "/minimapa.png?t=" + Date.now();
+  }
+
+  // HOTBAR
+  const hb = document.getElementById("hotbar");
+  hb.innerHTML = "";
+  const itens = j.inv || [];
+  const invPorId = {};
+  itens.forEach(x => { invPorId[x[4]] = { nome: x[0], tipo: x[1], bonus: x[2], qtd: x[3], id: x[4] }; });
+  let hbIds = j.hotbar || [];
+  while (hbIds.length < 8) hbIds.push(0);
+  for (let i = 0; i < 8; i++) {
+    const slot = document.createElement("div");
+    const itemId = hbIds[i] || 0;
+    if (itemId && invPorId[itemId]) {
+      const it = invPorId[itemId];
+      const semQtd = it.qtd <= 0;
+      slot.className = "slot" + (semQtd ? " vazio" : "");
+      slot.innerHTML = iconeDe(it.nome, 36) + '<span class="qtd">' + it.qtd + '</span>';
+      slot.title = it.nome;
+    } else {
+      slot.className = "slot";
+      slot.style.opacity = "0.3";
+    }
+    slot.onclick = () => abrirPicker(i);
+    hb.appendChild(slot);
+  }
+}
+
+// ============ ANIMAÇÃO ============
+// Preload todas as imagens do jogador (evita piscar)
+// Preload com decode() — impede flicker
+(function preloadSprites() {
+  const dirs = ["cima","esq","baixo","dir"];
+  window._spriteCache = {};
+  const promises = [];
+  dirs.forEach(d => {
+    for (let i = 0; i < 9; i++) {
+      const url = "/static/sprites/jogador/walk-" + d + "-" + i + ".png";
+      const img = new Image();
+      img.src = url;
+      window._spriteCache[url] = img;
+      promises.push(img.decode ? img.decode().catch(()=>{}) : Promise.resolve());
+    }
+    for (let i = 0; i < 2; i++) {
+      const url = "/static/sprites/jogador/idle-" + d + "-" + i + ".png";
+      const img = new Image();
+      img.src = url;
+      window._spriteCache[url] = img;
+      promises.push(img.decode ? img.decode().catch(()=>{}) : Promise.resolve());
+    }
+    for (let i = 0; i < 6; i++) {
+      const url = "/static/sprites/jogador/slash-" + d + "-" + i + ".png";
+      const img = new Image();
+      img.src = url;
+      window._spriteCache[url] = img;
+      promises.push(img.decode ? img.decode().catch(()=>{}) : Promise.resolve());
+    }
+  });
+  Promise.all(promises).then(() => {
+    console.log("Sprites carregados: " + promises.length);
+  });
+})();
+
+setInterval(() => {
+  const sp = document.getElementById("sprite-player");
+  if (!sp) return;
+  const dir = _ultimoDir || "baixo";
+  let url;
+  if (_atacando > 0) {
+    url = "/static/sprites/jogador/slash-" + dir + "-" + Math.min(_atacando - 1, 5) + ".png";
+    _atacando--;
+  } else if (Date.now() - _ultimoMover < 300) {
+    _animFrame = (_animFrame + 1) % 9;
+    url = "/static/sprites/jogador/walk-" + dir + "-" + _animFrame + ".png";
+  } else {
+    _animFrame = (_animFrame + 1) % 4;
+    const idleFrame = Math.floor(_animFrame / 2) % 2;
+    url = "/static/sprites/jogador/idle-" + dir + "-" + idleFrame + ".png";
+  }
+  // Usa o cache (evita recriar Image)
+  if (window._spriteCache && window._spriteCache[url]) {
+    const cached = window._spriteCache[url];
+    // Copia via canvas pra um data-URL ou usa o próprio src
+    if (sp.src !== cached.src) {
+      sp.style.backgroundImage = "url('" + url + "')";
+    }
+  } else {
+    sp.style.backgroundImage = "url('" + url + "')";
+  }
+}, 100);
+
+// ============ CARREGAR / MOVER ============
+async function carregar() {
+  const r = await fetch("/api/estado");
+  render(await r.json());
+}
+
+function mover(dir) {
+    _ultimoDir = dir;
+    // Chama a predição IMEDIATAMENTE (sem throttle, sem await)
+    moverPreditivo(dir);
+}
+
+async function atacar() {
+  _atacando = 6;
+  const r = await fetch("/api/atacar");
+  const j = await r.json();
+  if (j.msg) logMsg(j.msg);
+  if (j.estado) render(j.estado);
+}
+async function usarFerramenta() {
+  const r = await fetch("/api/pocao");
+  const j = await r.json();
+  if (j.msg) logMsg(j.msg);
+  if (j.estado) render(j.estado);
+}
+function atualizarBotaoInteragir() {
+  if (!J) return;
+  const btn = document.getElementById("btn-acao");
+  if (!btn) return;
+  const adj = [[J.x, J.y], [J.x+1, J.y], [J.x-1, J.y], [J.x, J.y+1], [J.x, J.y-1]];
+  const temNPC = (J.npcs || []).some(n => adj.some(a => a[0] === n[2] && a[1] === n[3]));
+  btn.style.display = temNPC ? "flex" : "none";
+}
+setInterval(atualizarBotaoInteragir, 400);
+async function acaoInteragir() {
+  const r = await fetch("/api/interagir");
+  const j = await r.json();
+  if (j.acao === "abrir_loja") {
+    abrirLoja(j.npc_nome, j.npc_id);
+  } else {
+    logMsg(j.msg || "Nada para interagir aqui");
+  }
+}
+
+// ============ JOYSTICK ============
+(function() {
+  const joy = document.getElementById("joystick");
+  const zona = document.getElementById("zona-joystick");
+  if (!joy || !zona) return;
+  const thumb = document.getElementById("joy-thumb");
+  let ativo = false, idToque = null, cx = 0, cy = 0;
+  const raio = 55;
+  let dirAtual = null;
+  function resetar() {
+    ativo = false; idToque = null;
+    joy.style.display = "none";
+    thumb.style.transform = "translate(0,0)";
+    dirAtual = null;
+  }
+  function start(px, py) {
+    cx = px; cy = py;
+    joy.style.left = px + "px";
+    joy.style.top = py + "px";
+    joy.style.display = "block";
+    ativo = true;
+    movendo(px, py);
+  }
+  function movendo(px, py) {
+    let dx = px - cx, dy = py - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > raio) { dx = dx/dist*raio; dy = dy/dist*raio; }
+    thumb.style.transform = "translate(" + dx + "px, " + dy + "px)";
+    if (dist < 10) { dirAtual = null; return; }
+    if (Math.abs(dx) > Math.abs(dy)) dirAtual = dx > 0 ? "dir" : "esq";
+    else dirAtual = dy > 0 ? "baixo" : "cima";
+  }
+  zona.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (ativo) return;
+    idToque = e.pointerId;
+    zona.setPointerCapture(e.pointerId);
+    start(e.clientX, e.clientY);
+  });
+  zona.addEventListener("pointermove", (e) => {
+    if (!ativo || e.pointerId !== idToque) return;
+    e.preventDefault();
+    movendo(e.clientX, e.clientY);
+  });
+  zona.addEventListener("pointerup", (e) => { if (e.pointerId === idToque) resetar(); });
+  zona.addEventListener("pointercancel", resetar);
+  setInterval(() => { if (ativo && dirAtual) mover(dirAtual); }, 200);
+})();
+// ============ MODAIS: abre/fecha ============
+function abrirModal(id) { document.getElementById(id).classList.add("aberto"); }
+function fecharModal(id) { document.getElementById(id).classList.remove("aberto"); }
+
+// ============ CHAT ============
+function abrirChat() { abrirModal("modal-chat"); chatAberto = true; naoLidas = 0; carregarChat(true); setTimeout(()=>document.getElementById("chat-input").focus(),100); }
+function fecharChat() { fecharModal("modal-chat"); chatAberto = false; }
+async function carregarChat(forcar) {
+  const r = await fetch("/api/chat/mensagens?desde=" + ultimoId);
+  const novas = await r.json();
+  if (!novas.length && !forcar) return;
+  const box = document.getElementById("chat-msgs");
+  const eu = J ? J.id : null;
+  if (forcar) { box.innerHTML = ""; ultimoId = 0; const r2 = await fetch("/api/chat/mensagens?desde=0"); const todas = await r2.json(); todas.forEach(m => { ultimoId = m.id; box.appendChild(montarMsg(m, eu)); }); }
+  else novas.forEach(m => { ultimoId = m.id; box.appendChild(montarMsg(m, eu)); });
+  box.scrollTop = box.scrollHeight;
+}
+function montarMsg(m, eu) {
+  const div = document.createElement("div");
+  const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  if (m.canal === "sistema") { div.style.color = "#8fff8f"; div.style.fontStyle = "italic"; div.innerHTML = '<span style="color:#555">' + hora + '</span> ' + m.texto; return div; }
+  div.innerHTML = '<span style="color:#555">' + hora + '</span> ' + (m.badge?m.badge+" ":"") + '<span style="color:' + m.cor + ';font-weight:bold">' + m.nome + '</span>: ' + m.texto.replace(/</g,"&lt;");
+  return div;
+}
+async function enviarChat() {
+  const inp = document.getElementById("chat-input");
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = "";
+  if (texto.toLowerCase() === "/console") { fecharChat(); abrirDev(); return; }
+  await fetch("/api/chat/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto})});
+  await carregarChat(false);
+}
+
+// ============ INVENTÁRIO ============
+function abrirInv() {
+  const grid = document.getElementById("inv-grid");
+  grid.innerHTML = "";
+  const itens = (J && J.inv) || [];
+  for (let i = 0; i < 30; i++) {
+    const slot = document.createElement("div");
+    slot.style.cssText = "width:52px;height:52px;background:rgba(40,30,20,0.9);border:2px solid #6a5a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer";
+    if (i < itens.length) {
+      const [nome,tipo,bonus,qtd,id,inv_id,equipado] = itens[i];
+      slot.innerHTML = iconeDe(nome, 40) + '<span style="position:absolute;bottom:1px;right:3px;font-size:10px;font-weight:bold;color:#fff;text-shadow:1px 1px 0 #000">' + qtd + '</span>' + (equipado ? '<span style="position:absolute;top:1px;left:3px;font-size:12px;color:#4f4;text-shadow:1px 1px 0 #000">E</span>' : '');
+      if (qtd <= 0) { slot.style.opacity = "0.35"; slot.style.filter = "grayscale(1)"; }
+      slot.onclick = () => selecionarInv(itens[i]);
+    } else { slot.style.opacity = "0.3"; }
+    grid.appendChild(slot);
+  }
+  document.getElementById("inv-info-conteudo").innerHTML = "<div style='color:#666;font-size:11px'>Toque num item</div>";
+  abrirModal("modal-inv");
+}
+function fecharInv() { fecharModal("modal-inv"); }
+function selecionarInv(item) {
+  const [nome,tipo,bonus,qtd,id,inv_id,equipado] = item;
+  document.getElementById("inv-info-conteudo").innerHTML =
+    '<div style="text-align:center;margin-bottom:6px">' + iconeDe(nome, 64) + '</div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Nome</span><b>' + nome + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Tipo</span><b>' + tipo + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #2a2a4a"><span style="color:#888">Bonus</span><b>+' + bonus + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888">Qtd</span><b>' + qtd + '</b></div>' +
+    '<div style="margin-top:10px;display:flex;gap:6px">' +
+    (tipo === "pocao" && qtd > 0 ? '<button onclick="usarPocaoInv()" style="flex:1;padding:8px;background:#4f4;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Usar</button>' : "") +
+    ((tipo === "arma" || tipo === "escudo") && qtd > 0 ? '<button onclick="equiparItem(' + inv_id + ')" style="flex:1;padding:8px;background:' + (equipado ? '#a44' : '#4a4') + ';color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">' + (equipado ? 'Desequipar' : 'Equipar') + '</button>' : "") +
+    (qtd <= 0 ? '<div style="flex:1;padding:8px;background:#3a0a0a;color:#ff8899;border-radius:6px;text-align:center;font-size:11px">Esgotado</div>' : "") +
+    (qtd > 0 ? '<button onclick="venderItem(' + inv_id + ')" style="flex:1;padding:8px;background:#c9a227;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:bold">Vender</button>' : "") +
+    '<button onclick="porNaHotbar(' + id + ')" style="flex:1;padding:8px;background:#333;color:#eee;border:1px solid #555;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer">Hotbar</button></div>';
+}
+async function usarPocaoInv() { await usarFerramenta(); abrirInv(); }
+
+async function venderItem(invId) {
+  if (!confirm("Vender este item? Voce recebe metade do valor.")) return;
+  const r = await fetch("/api/vender/" + invId, {method: "POST"});
+  const j = await r.json();
+  if (j.estado) render(j.estado);
+  abrirInv();
+  logMsg(j.msg || "Vendido");
+}
+async function equiparItem(invId) {
+  await fetch("/api/equipar/" + invId, {method: "POST"});
+  const r = await fetch("/api/estado");
+  render(await r.json());
+  abrirInv();
+}
+async function porNaHotbar(itemId) {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice(); while (hb.length < 8) hb.push(0);
+  for (let i = 0; i < 8; i++) if (hb[i] === 0) { hb[i] = itemId; break; }
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  const r = await fetch("/api/estado"); render(await r.json()); fecharInv();
+}
+
+// ============ PICKER ============
+function abrirPicker(idx) {
+  slotEditando = idx;
+  const lista = document.getElementById("picker-lista");
+  lista.innerHTML = "";
+  const itens = (J && J.inv) || [];
+  if (!itens.length) lista.innerHTML = "<div style='color:#666;padding:20px;text-align:center'>Vazio</div>";
+  itens.forEach(x => {
+    const div = document.createElement("div");
+    div.style.cssText = "background:#1a1a2a;border:2px solid #444;border-radius:6px;padding:10px;display:flex;gap:10px;font-size:12px;cursor:pointer";
+    div.innerHTML = iconeDe(x[0], 32) + ' <span>' + x[0] + ' x' + x[3] + '</span>';
+    div.onclick = () => escolherItem(x[4]);
+    lista.appendChild(div);
+  });
+  abrirModal("modal-picker");
+}
+function fecharPicker() { fecharModal("modal-picker"); slotEditando = -1; }
+async function escolherItem(itemId) {
+  if (!J) return;
+  let hb = (J.hotbar || []).slice(); while (hb.length < 8) hb.push(0);
+  for (let i = 0; i < 8; i++) if (i !== slotEditando && hb[i] === itemId) hb[i] = 0;
+  hb[slotEditando] = itemId;
+  await fetch("/api/hotbar/salvar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({slots: hb})});
+  fecharPicker();
+  const r = await fetch("/api/estado"); render(await r.json());
+}
+
+// ============ PERFIL (abas) ============
+function abrirPerfil() {
+  abrirModal("modal-perfil");
+  mudarTabPerfil("personagem");
+}
+function fecharPerfil() { fecharModal("modal-perfil"); }
+function mudarTabPerfil(tab) {
+  document.getElementById("tab-conteudo-personagem").style.display = tab === "personagem" ? "block" : "none";
+  document.getElementById("tab-conteudo-guilda").style.display = tab === "guilda" ? "block" : "none";
+  document.getElementById("tab-conteudo-amigos").style.display = tab === "amigos" ? "block" : "none";
+  ["personagem","guilda","amigos"].forEach(t => {
+    const btn = document.getElementById("tab-" + t);
+    if (t === tab) { btn.style.color = "#a06bff"; btn.style.borderBottom = "2px solid #a06bff"; }
+    else { btn.style.color = "#666"; btn.style.borderBottom = "none"; }
+  });
+  if (tab === "personagem") renderPerfil();
+  if (tab === "guilda") atualizarGuild();
+  if (tab === "amigos") atualizarAmigos();
+}
+function renderPerfil() {
+  if (!J) return;
+  const j = J;
+  const classe = j.classe || "cavaleiro";
+  const cor = j.cargo_cor || "#4af6ff";
+  document.getElementById("tab-conteudo-personagem").innerHTML =
+    '<div style="display:flex;gap:14px;margin-bottom:14px;align-items:center">' +
+    '<div style="width:80px;height:80px;background-image:url(\'' + SPRITE_CLASSE[classe] + '\');background-size:cover;image-rendering:pixelated;border:2px solid #4af6ff;border-radius:8px;flex-shrink:0"></div>' +
+    '<div style="flex:1"><div style="font-size:15px;font-weight:bold;color:' + cor + '">' + (j.cargo_badge||"") + ' ' + j.nome + '</div>' +
+    '<div style="font-size:11px;color:#aaa;margin-top:4px">' + (EMOJI_CLASSE[classe]||classe) + '</div>' +
+    '<div style="display:inline-block;font-size:9px;padding:2px 6px;border:1px solid ' + cor + ';color:' + cor + ';border-radius:3px;margin-top:4px">' + (j.cargo_nome||"Player").toUpperCase() + '</div></div></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #2a2a4a;border-bottom:1px solid #2a2a4a"><span style="color:#888;font-size:12px">🆔 ID</span><b>#' + (j.jid||j.id||"?") + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a"><span style="color:#888;font-size:12px">⭐ Nível</span><b style="color:#ffd700">Nv ' + j.nivel + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a4a"><span style="color:#888;font-size:12px">⚔️ Classe</span><b>' + (EMOJI_CLASSE[classe]||classe) + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#888;font-size:12px">🛡️ Guilda</span><b style="color:#c9a227">' + (j.guilda || "Sem guilda") + '</b></div>';
+}
+
+// ============ GUILDA ============
+async function atualizarGuild() {
+  const r = await fetch("/api/guild/info");
+  const j = await r.json();
+  const cont = document.getElementById("tab-conteudo-guilda");
+  if (!j.tem) {
+    const ra = await fetch("/api/guild/acoes");
+    const a = await ra.json();
+    if (!a.pode_criar) { cont.innerHTML = '<div style="text-align:center;color:#888;padding:20px;font-size:12px">Precisa ser VIP+ para criar guilda</div>'; return; }
+    cont.innerHTML = '<input id="guild-criar-nome" placeholder="nome da guilda" style="width:100%;padding:10px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;margin-bottom:8px">' +
+      '<button onclick="acaoGuild(\'criar\', document.getElementById(\'guild-criar-nome\').value)" style="width:100%;padding:10px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">Criar guilda</button>' +
+      '<div id="guild-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#c9a227;margin-top:8px"></div>';
+    return;
+  }
+  let h = '<div style="text-align:center;margin-bottom:12px"><div style="font-size:17px;color:#c9a227;font-weight:bold">' + j.nome + '</div>' +
+    '<div style="font-size:11px;color:#888;margin-top:4px">Lider: ' + j.lider + '</div>' +
+    '<div style="font-size:11px;color:#4af6ff;margin-top:2px">Voce: ' + j.cargo_meu + '</div></div>' +
+    '<div style="font-size:11px;color:#888;margin-bottom:6px">MEMBROS (' + j.membros.length + ')</div>';
+  j.membros.forEach(m => {
+    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;margin-bottom:3px;font-size:11px"><span>' + (m.online?"🟢":"⚫") + ' ' + m.nome + '</span><span style="color:#888">' + m.cargo_guilda + '</span></div>';
+  });
+  h += '<div style="font-size:11px;color:#888;margin:10px 0 4px">ACOES</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">';
+  if (j.cargo_meu === "lider") {
+    h += '<button onclick="acaoGuildConvidar()" style="padding:6px;background:#333;color:#fff;border:1px solid #4af6ff;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">+ Convidar</button>';
+    h += '<button onclick="acaoGuild(\'renomear\', prompt(\'Novo nome (5M):\'))" style="padding:6px;background:#333;color:#fff;border:1px solid #ffd700;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Renomear</button>';
+  }
+  h += '<button onclick="acaoGuild(\'sair\')" style="grid-column:1/-1;padding:6px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer">Sair</button></div>';
+  h += '<div id="guild-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#c9a227;margin-top:8px"></div>';
+  h += '<div style="font-size:11px;color:#888;margin:12px 0 4px">💬 CHAT DA GUILDA</div>';
+  h += '<div id="guild-chat-msgs" style="background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;padding:8px;height:140px;overflow-y:auto;font-size:11px;line-height:1.5"></div>';
+  h += '<div style="display:flex;gap:4px;margin-top:4px"><input id="guild-chat-input" placeholder="mensagem" maxlength="200" onkeydown="if(event.key===\'Enter\')enviarGuildChat()" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px"><button onclick="enviarGuildChat()" style="padding:8px 14px;background:#c9a227;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">Enviar</button></div>';
+  cont.innerHTML = h;
+  ultimoGuildMsg = 0;
+  carregarGuildChat();
+  if (!window._guildInt) window._guildInt = setInterval(() => { if (document.getElementById("guild-chat-msgs")) carregarGuildChat(); }, 3000);
+}
+let ultimoGuildMsg = 0;
+async function carregarGuildChat() {
+  const box = document.getElementById("guild-chat-msgs");
+  if (!box) return;
+  const r = await fetch("/api/chat/guild?desde=" + ultimoGuildMsg);
+  const novas = await r.json();
+  if (!novas.length) return;
+  novas.forEach(m => {
+    ultimoGuildMsg = m.id;
+    const hora = new Date(m.ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement("div");
+    div.innerHTML = '<span style="color:#555">' + hora + '</span> <span style="color:' + m.cor + ';font-weight:bold">' + (m.badge||"") + ' ' + m.nome + '</span>: ' + m.texto.replace(/</g,"&lt;");
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+async function enviarGuildChat() {
+  const inp = document.getElementById("guild-chat-input");
+  const texto = inp.value.trim(); if (!texto) return; inp.value = "";
+  await fetch("/api/chat/guild/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto})});
+  await carregarGuildChat();
+}
+async function acaoGuild(acao, valor) {
+  if (valor === null || valor === undefined) return;
+  const r = await fetch("/api/guild/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao, nome: valor})});
+  const j = await r.json();
+  const m = document.getElementById("guild-msg");
+  if (m) { m.textContent = j.msg; m.style.display = "block"; }
+  setTimeout(atualizarGuild, 800);
+}
+function acaoGuildConvidar() { const n = prompt("Nome:"); if (n) acaoGuild("convidar", n); }
+
+// ============ AMIGOS ============
+async function atualizarAmigos() {
+  const r = await fetch("/api/amigos/listar");
+  const j = await r.json();
+  const cont = document.getElementById("tab-conteudo-amigos");
+  let h = '<div style="display:flex;gap:4px;margin-bottom:10px"><input id="amigo-add-nome" placeholder="nome do jogador" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px"><button onclick="acaoAmigoAdd()" style="padding:8px 14px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">+</button></div>';
+  if (j.pedidos.length) {
+    h += '<div style="font-size:11px;color:#ffd700;margin-bottom:6px">PEDIDOS</div>';
+    j.pedidos.forEach(p => { h += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#0a0a14;border:1px solid #ffd700;border-radius:4px;margin-bottom:4px;font-size:11px"><span>' + p.nome + '</span><button onclick="aceitarAmigo(\'' + p.nome + '\')" style="padding:3px 10px;background:#4f4;color:#0a0a1a;border:none;border-radius:3px;font-family:inherit;font-size:10px;font-weight:bold;cursor:pointer">Aceitar</button></div>'; });
+  }
+  h += '<div style="font-size:11px;color:#888;margin:10px 0 4px">AMIGOS (' + j.amigos.length + ')</div>';
+  j.amigos.forEach(a => { h += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#0a0a14;border:1px solid #2a2a4a;border-radius:4px;margin-bottom:4px;font-size:11px"><span style="cursor:pointer;flex:1;color:#4af6ff;text-decoration:underline" onclick="abrirChatPriv(' + a.id + ',\'' + a.nome + '\')">' + (a.online?"🟢":"⚫") + ' ' + a.nome + ' 💬</span><button onclick="removerAmigo(\'' + a.nome + '\')" style="padding:2px 8px;background:#3a0a0a;color:#ff8899;border:1px solid #ff5566;border-radius:3px;font-family:inherit;font-size:10px;cursor:pointer">✕</button></div>'; });
+  h += '<div id="priv-painel" style="display:none;margin-top:12px"><div id="priv-titulo" style="font-size:11px;color:#4af6ff;margin-bottom:4px"></div><div id="priv-chat-msgs" style="background:#0a0a14;border:1px solid #4af6ff;border-radius:4px;padding:8px;height:140px;overflow-y:auto;font-size:11px"></div><div style="display:flex;gap:4px;margin-top:4px"><input id="priv-chat-input" placeholder="mensagem" maxlength="200" onkeydown="if(event.key===\'Enter\')enviarPrivChat()" style="flex:1;padding:8px;background:#0a0a1a;color:#fff;border:1px solid #555;border-radius:4px;font-family:inherit;font-size:11px"><button onclick="enviarPrivChat()" style="padding:8px 14px;background:#4af6ff;color:#0a0a1a;border:none;border-radius:4px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer">Enviar</button></div></div>';
+  h += '<div id="amigo-msg" style="display:none;background:#0a0a14;border:1px solid #4af6ff;border-radius:4px;padding:6px;font-size:11px;color:#4af6ff;margin-top:8px"></div>';
+  cont.innerHTML = h;
+}
+let ultimoPrivMsg = 0, privAmigoAtual = null;
+async function abrirChatPriv(id, nome) {
+  privAmigoAtual = id; ultimoPrivMsg = 0;
+  document.getElementById("priv-titulo").textContent = "💬 Chat com " + nome;
+  document.getElementById("priv-painel").style.display = "block";
+  document.getElementById("priv-chat-msgs").innerHTML = "";
+  await carregarPrivChat();
+  if (!window._privInt) window._privInt = setInterval(() => { if (privAmigoAtual) carregarPrivChat(); }, 3000);
+}
+async function carregarPrivChat() {
+  if (!privAmigoAtual) return;
+  const box = document.getElementById("priv-chat-msgs"); if (!box) return;
+  const r = await fetch("/api/chat/privado/" + privAmigoAtual + "?desde=" + ultimoPrivMsg);
+  const novas = await r.json(); if (!novas.length) return;
+  novas.forEach(m => { ultimoPrivMsg = m.id; const hora = new Date(m.ts*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); const div = document.createElement("div"); div.innerHTML = '<span style="color:#555">' + hora + '</span> <span style="color:' + m.cor + ';font-weight:bold">' + (m.badge||"") + ' ' + m.nome + '</span>: ' + m.texto.replace(/</g,"&lt;"); box.appendChild(div); });
+  box.scrollTop = box.scrollHeight;
+}
+async function enviarPrivChat() {
+  if (!privAmigoAtual) return;
+  const inp = document.getElementById("priv-chat-input"); const texto = inp.value.trim(); if (!texto) return; inp.value = "";
+  await fetch("/api/chat/privado/" + privAmigoAtual + "/enviar", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({texto})});
+  await carregarPrivChat();
+}
+async function acaoAmigoAdd() {
+  const nome = document.getElementById("amigo-add-nome").value.trim(); if (!nome) return;
+  const r = await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"add", nome})});
+  const j = await r.json(); const m = document.getElementById("amigo-msg"); if (m) { m.textContent = j.msg; m.style.display = "block"; }
+  setTimeout(atualizarAmigos, 800);
+}
+async function aceitarAmigo(nome) { await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"aceitar", nome})}); setTimeout(atualizarAmigos, 500); }
+async function removerAmigo(nome) { if (!confirm("Remover " + nome + "?")) return; await fetch("/api/amigos/acao", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({acao:"remover", nome})}); setTimeout(atualizarAmigos, 500); }
+
+// ============ MAPA GRANDE ============
+function abrirMapaGrande() {
+  if (!J) return;
+  // Atualiza a imagem do minimapa com timestamp (força recarregar)
+  const img = document.getElementById("mapa-grande-img");
+  if (img) img.src = "/minimapa.png?t=" + Date.now();
+  abrirModal("modal-mapa");
+}
+function fecharMapaGrande() { fecharModal("modal-mapa"); }
+async function teleportarMapa(mx, my) {
+  if (!J) return;
+  const permitidos = ["admin", "dev"];
+  if (!permitidos.includes(J.cargo)) return;
+  if (!confirm("Teleportar para (" + mx + ", " + my + ")?")) return;
+  const r = await fetch("/api/dev/acao", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({acao: "teleporte", valor: null, x: mx, y: my})
+  });
+  const j = await r.json();
+  if (j.estado) render(j.estado);
+  fecharMapaGrande();
+}
+
+// ============ CONFIG ============
+function abrirConfig() { abrirModal("modal-config"); }
+function fecharConfig() { fecharModal("modal-config"); }
+function sairJogo() { if (confirm("Sair da conta?")) window.location.href = "/logout"; }
+
+// ============ DEV ============
+function abrirDev() {
+  if (!J) return;
+  const permitidos = ["ajudante","mod","admin","dev"];
+  if (!permitidos.includes(J.cargo)) return;
+  document.querySelectorAll("#modal-dev [data-perm]").forEach(el => {
+    const perms = el.getAttribute("data-perm").split(",");
+    el.style.display = perms.includes(J.cargo) ? "" : "none";
+  });
+  abrirModal("modal-dev");
+}
+function fecharDev() { fecharModal("modal-dev"); }
+async function devAcao(acao, valor, extra) {
+  const payload = { acao, valor };
+  if (extra) Object.assign(payload, extra);
+  const r = await fetch("/api/dev/acao", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+  const j = await r.json();
+  const msg = document.getElementById("dev-msg");
+  if (msg) {
+    const texto = j.msg || j.erro || "feito";
+    msg.textContent = texto;
+    msg.style.display = texto ? "block" : "none";
+  }
+  const s = await fetch("/api/estado"); render(await s.json());
+}
+
+// ============ POLLING ============
+setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 1000);
+setInterval(() => { if (document.hidden) return; carregarChat(false); }, 3000);
+window.addEventListener("resize", () => { if (J) render(J); });
+window.addEventListener("orientationchange", () => setTimeout(() => { if (J) render(J); }, 400));
+
+// ============ INIT ============
+carregar();
+setInterval(carregarDropsChao, 1000);
+</script>
+
+<div id="modal-loja" class="modal">
+  <div class="modal-topo" style="background:linear-gradient(180deg,#3a2a10,#1a1005);border-bottom:2px solid #c9a227">
+    <h2 id="loja-titulo" style="color:#ffd700;text-shadow:1px 1px 0 #000">🏪 MERCADOR</h2>
+    <button onclick="fecharLoja()">Fechar</button>
+  </div>
+  <div class="modal-corpo" style="background:#1a1a0a;border:2px solid #c9a227;border-radius:6px;padding:10px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+      <button id="loja-aba-compra" onclick="mudarAbaLoja('compra')" style="flex:1;padding:8px;background:#c9a227;color:#0a0a1a;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">COMPRAR</button>
+      <button id="loja-aba-venda" onclick="mudarAbaLoja('venda')" style="flex:1;padding:8px;background:#3a2a10;color:#aaa;border:1px solid #c9a227;border-radius:6px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer">VENDER</button>
+    </div>
+    <div style="display:flex;gap:10px;flex:1;min-height:0">
+      <div id="loja-grade" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;overflow-y:auto;background:#0a0a05;border:1px solid #3a2a10;border-radius:4px;padding:6px;align-content:start;min-height:180px;max-height:280px"></div>
+      <div style="width:140px;background:#0a0a05;border:1px solid #3a2a10;border-radius:4px;padding:8px;display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <div id="loja-det-icone" style="text-align:center;font-size:36px;min-height:40px;display:flex;align-items:center;justify-content:center">—</div>
+        <div id="loja-det-nome" style="font-size:11px;color:#eee;font-weight:bold;text-align:center;min-height:14px">Selecione um item</div>
+        <div id="loja-det-info" style="font-size:9px;color:#888;text-align:center;min-height:12px"></div>
+        <div id="loja-det-preco" style="font-size:12px;color:#ffd700;text-align:center;font-weight:bold;min-height:14px"></div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:4px">
+          <button onclick="mudarQtdLoja(-1)" style="width:26px;height:26px;background:#3a2a10;color:#ffd700;border:1px solid #c9a227;border-radius:4px;font-family:inherit;font-size:14px;cursor:pointer;font-weight:bold">-</button>
+          <input id="loja-qtd" type="number" value="1" min="1" style="width:38px;padding:3px;background:#000;color:#fff;border:1px solid #3a2a10;border-radius:4px;font-family:inherit;font-size:11px;text-align:center">
+          <button onclick="mudarQtdLoja(1)" style="width:26px;height:26px;background:#3a2a10;color:#ffd700;border:1px solid #c9a227;border-radius:4px;font-family:inherit;font-size:14px;cursor:pointer;font-weight:bold">+</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+          <button onclick="setQtdLoja(1)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+1</button>
+          <button onclick="setQtdLoja(10)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+10</button>
+          <button onclick="setQtdLoja(100)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+100</button>
+          <button onclick="setQtdLoja(1000)" style="padding:3px;background:#1a1005;color:#c9a227;border:1px solid #3a2a10;border-radius:3px;font-family:inherit;font-size:9px;cursor:pointer">+1k</button>
+        </div>
+        <button id="loja-btn-acao" onclick="confirmarLoja()" disabled style="margin-top:auto;padding:9px;background:#333;color:#666;border:none;border-radius:6px;font-family:inherit;font-size:11px;font-weight:bold;cursor:not-allowed">COMPRAR</button>
+      </div>
+    </div>
+    <div id="loja-msg" style="display:none;background:#0a0a14;border:1px solid #c9a227;border-radius:4px;padding:6px;font-size:11px;color:#4aff66;margin-top:8px;text-align:center"></div>
+    <div id="loja-ouro" style="text-align:center;font-size:12px;color:#ffd700;margin-top:8px;font-weight:bold"></div>
+  </div>
+</div>
+<script>
+let lojaAba = "compra";
+let lojaItemSel = null;
+let lojaItensCompra = [];
+let lojaItensVenda = [];
+
+let lojaNpcId = 0;
+async function abrirLoja(npcNome, npcId) {
+  document.getElementById("loja-titulo").textContent = "🏪 " + (npcNome || "MERCADOR").toUpperCase();
+  document.getElementById("loja-msg").style.display = "none";
+  lojaAba = "compra";
+  lojaItemSel = null;
+  lojaNpcId = npcId || 0;
+  mudarAbaLoja("compra");
+  abrirModal("modal-loja");
+}
+
+function fecharLoja() { fecharModal("modal-loja"); }
+
+async function mudarAbaLoja(aba) {
+  lojaAba = aba;
+  lojaItemSel = null;
+  const btnC = document.getElementById("loja-aba-compra");
+  const btnV = document.getElementById("loja-aba-venda");
+  if (aba === "compra") {
+    btnC.style.background = "#c9a227"; btnC.style.color = "#0a0a1a"; btnC.style.border = "none";
+    btnV.style.background = "#3a2a10"; btnV.style.color = "#aaa"; btnV.style.border = "1px solid #c9a227";
+  } else {
+    btnV.style.background = "#c9a227"; btnV.style.color = "#0a0a1a"; btnV.style.border = "none";
+    btnC.style.background = "#3a2a10"; btnC.style.color = "#aaa"; btnC.style.border = "1px solid #c9a227";
+  }
+  limparDetalheLoja();
+  await carregarLoja();
+}
+
+async function carregarLoja() {
+  const ouro = J ? J.ouro : 0;
+  document.getElementById("loja-ouro").textContent = "💰 Seu ouro: " + ouro;
+  const grade = document.getElementById("loja-grade");
+  grade.innerHTML = "";
+  let itens = [];
+  if (lojaAba === "compra") {
+    const r = await fetch("/api/loja/itens?npc_id=" + lojaNpcId);
+    lojaItensCompra = await r.json();
+    itens = lojaItensCompra;
+  } else {
+    lojaItensVenda = (J && J.inv) || [];
+    itens = lojaItensVenda;
+  }
+  if (!itens.length) {
+    grade.innerHTML = '<div style="grid-column:1/-1;padding:20px;text-align:center;color:#666;font-size:11px">' + (lojaAba === "compra" ? "Loja vazia" : "Inventario vazio") + '</div>';
+    return;
+  }
+  itens.forEach((it, idx) => {
+    const slot = document.createElement("div");
+    slot.style.cssText = "aspect-ratio:1;background:#1a1005;border:2px solid #3a2a10;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative";
+    let nome, icone, preco;
+    if (lojaAba === "compra") {
+      nome = it.nome; preco = it.preco;
+      icone = iconeDe(it.nome, 30);
+    } else {
+      nome = it[0]; preco = "?";
+      icone = iconeDe(it[0], 30);
+    }
+    slot.innerHTML = icone + '<span style="position:absolute;bottom:1px;right:3px;font-size:9px;color:#ffd700;font-weight:bold">' + (lojaAba === "venda" && it[3] ? "x" + it[3] : "") + '</span>';
+    slot.onclick = () => selecionarItemLoja(idx);
+    slot.dataset.idx = idx;
+    grade.appendChild(slot);
+  });
+}
+
+function selecionarItemLoja(idx) {
+  document.querySelectorAll("#loja-grade > div").forEach(s => s.style.borderColor = "#3a2a10");
+  const slot = document.querySelector('#loja-grade > div[data-idx="' + idx + '"]');
+  if (slot) slot.style.borderColor = "#ffd700";
+  let nome, tipo, bonus, preco, qtdDisp;
+  if (lojaAba === "compra") {
+    const it = lojaItensCompra[idx];
+    nome = it.nome; tipo = it.tipo; bonus = it.bonus; preco = it.preco;
+    lojaItemSel = { tipo: "compra", id: it.id, nome: nome, preco: preco };
+  } else {
+    const it = lojaItensVenda[idx];
+    nome = it[0]; tipo = it[1]; bonus = it[2]; qtdDisp = it[3];
+    const invId = it[5];
+    const preco_loja = lojaItensCompra.find(x => x.nome === nome);
+    preco = preco_loja ? Math.max(1, Math.floor(preco_loja.preco / 2)) : (tipo === "arma" ? 10 : tipo === "escudo" ? 7 : 5);
+    lojaItemSel = { tipo: "venda", id: invId, nome: nome, preco: preco, qtdDisp: qtdDisp };
+  }
+  document.getElementById("loja-det-icone").innerHTML = iconeDe(nome, 44);
+  document.getElementById("loja-det-nome").textContent = nome;
+  document.getElementById("loja-det-info").textContent = tipo + " +" + (bonus || 0);
+  document.getElementById("loja-det-preco").textContent = preco + " ouro";
+  document.getElementById("loja-qtd").value = 1;
+  atualizarBotaoLoja();
+}
+
+function limparDetalheLoja() {
+  document.getElementById("loja-det-icone").innerHTML = "—";
+  document.getElementById("loja-det-nome").textContent = "Selecione um item";
+  document.getElementById("loja-det-info").textContent = "";
+  document.getElementById("loja-det-preco").textContent = "";
+  document.getElementById("loja-qtd").value = 1;
+  const btn = document.getElementById("loja-btn-acao");
+  btn.textContent = lojaAba === "compra" ? "COMPRAR" : "VENDER";
+  btn.disabled = true;
+  btn.style.background = "#333";
+  btn.style.color = "#666";
+  btn.style.cursor = "not-allowed";
+}
+
+function atualizarBotaoLoja() {
+  const btn = document.getElementById("loja-btn-acao");
+  if (!lojaItemSel) { btn.disabled = true; return; }
+  const qtd = parseInt(document.getElementById("loja-qtd").value) || 1;
+  const total = lojaItemSel.preco * qtd;
+  const temOuro = (J.ouro || 0) >= total;
+  if (lojaAba === "compra") {
+    btn.textContent = "COMPRAR (" + total + ")";
+    btn.disabled = false;
+    if (temOuro) {
+      btn.style.background = "#4a7c2a"; btn.style.color = "#fff";
+    } else {
+      btn.style.background = "#c47a1a"; btn.style.color = "#fff";
+    }
+    btn.style.cursor = "pointer";
+  } else {
+    btn.textContent = "VENDER (" + total + " ouro)";
+    if (qtd > (lojaItemSel.qtdDisp || 0)) {
+      btn.disabled = true; btn.style.background = "#333"; btn.style.color = "#666"; btn.style.cursor = "not-allowed";
+    } else {
+      btn.disabled = false; btn.style.background = "#c9a227"; btn.style.color = "#0a0a1a"; btn.style.cursor = "pointer";
+    }
+  }
+}
+
+function mudarQtdLoja(delta) {
+  const inp = document.getElementById("loja-qtd");
+  let v = (parseInt(inp.value) || 1) + delta;
+  if (v < 1) v = 1;
+  inp.value = v;
+  atualizarBotaoLoja();
+}
+
+function setQtdLoja(qtd) {
+  document.getElementById("loja-qtd").value = qtd;
+  atualizarBotaoLoja();
+}
+
+document.addEventListener("input", (e) => {
+  if (e.target && e.target.id === "loja-qtd") atualizarBotaoLoja();
+});
+
+async function confirmarLoja() {
+  if (!lojaItemSel) return;
+  const qtd = parseInt(document.getElementById("loja-qtd").value) || 1;
+  const msg = document.getElementById("loja-msg");
+  if (lojaAba === "compra") {
+    const r = await fetch("/api/comprar/" + lojaItemSel.id, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({qtd: qtd})
+    });
+    const j = await r.json();
+    msg.textContent = j.msg;
+    msg.style.display = "block";
+    msg.style.color = j.msg && j.msg.indexOf("insuficiente") !== -1 ? "#ff5566" : "#4aff66";
+    if (j.estado) render(j.estado);
+  } else {
+    const r = await fetch("/api/vender/" + lojaItemSel.id, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({qtd: qtd})
+    });
+    const j = await r.json();
+    msg.textContent = j.msg;
+    msg.style.display = "block";
+    msg.style.color = "#4aff66";
+    if (j.estado) render(j.estado);
+  }
+  lojaItemSel = null;
+  limparDetalheLoja();
+  await carregarLoja();
+}
+
+setTimeout(carregarObjetosMapa, 1000);
+</script>
+</body>
+</html>

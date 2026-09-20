@@ -13,8 +13,8 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 
 /* ==== MAPA ==== */
 #camera{position:absolute;inset:0;overflow:hidden}
-#mapa{transition:transform 0.2s linear;position:relative;position:absolute;top:0;left:0;display:grid;will-change:transform}
-.tile{width:64px;height:64px;background-size:cover;background-position:center;image-rendering:pixelated;position:relative}
+#mapa{position:absolute;top:0;left:0;display:grid;will-change:transform}
+.tile{padding:0;margin:0;width:64px;height:64px;background-size:cover;background-position:center;image-rendering:pixelated;position:relative}
 .tile.grama{background-image:url('/static/sprites/terreno/grama.png')}
 .tile.agua{background-image:url('/static/sprites/terreno/agua.png')}
 .tile.areia{background-image:url('/static/sprites/terreno/areia.png')}
@@ -35,7 +35,6 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .tile.obj-pinheiro_pequeno{background-image:url('/static/sprites/terreno/arvores/pinheiro_pequeno.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
 .tile.obj-cogumelo{background-image:url('/static/sprites/terreno/arvores/cogumelo.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
 .tile.obj-cacto{background-image:url('/static/sprites/terreno/arvores/cogumelo.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
-.tile.obj-fogueira{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Fire_animation.png');background-size:contain;background-repeat:no-repeat;background-position:center}
 .tile.obj-barril{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_simple1_1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
 .tile.obj-flor_azul{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_blue_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
 .tile.obj-flor_rosa{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_pink_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
@@ -43,7 +42,6 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .tile.obj-flor_vermelha{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_red_flowers1.png');background-size:contain;background-repeat:no-repeat;background-position:center bottom}
 
 
-.obj-fogueira{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Fire_animation.png');background-size:contain;background-repeat:no-repeat;background-position:center}
 .obj-barril{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_simple1_1.png')}
 .obj-bandeira{background-image:url('/static/sprites/terreno/lobby/usaveis/Autumn_bush1.png')}
 .obj-flor_azul{background-image:url('/static/sprites/terreno/lobby/usaveis/Bush_blue_flowers1.png')}
@@ -54,15 +52,15 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 
 
 /* ==== ENTIDADES ==== */
-.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
+.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3}
 .sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite/* .monstro-slime removido */
 to{background-position:-384px 0}}
-.sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png')}
-.sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png')}
-.sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png')}
+
+
+
 .sprite.npc{background-image:url('/static/sprites/npc-mercador.png')}
 .sprite.outro{border-radius:50%;box-shadow:0 0 8px #fff}
 .nome-ent{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;z-index:10;pointer-events:none;font-weight:bold}
@@ -154,47 +152,227 @@ body{background:#1a3a5a;}
 
 
 
-.monstro-slime-verde, .monstro-slime-azul, 
+}
 
 
 
+}
 
 
 
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
+to{background-position:-384px 0}}
 
 
+/* === DROPS NO CHÃO === */
+.drop-chao{
+    position:absolute;
+    width:40px;height:40px;
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    z-index:4;
+    pointer-events:none;
+    animation:dropFloat 1.5s ease-in-out infinite;
+    filter:drop-shadow(0 0 4px gold);
+}
+@keyframes dropFloat{
+    0%, 100%{transform:translateY(0)}
+    50%{transform:translateY(-4px)}
+}
+.drop-fly{
+    position:fixed;
+    width:40px;height:40px;
+    background-size:contain;
+    background-repeat:no-repeat;
+    z-index:9999;
+    pointer-events:none;
+    transition:all 1.2s ease-out;
+}
 
 
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-to{background-position:-240px 0}}
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-to{background-position:-240px 0}}
-
-
-
-.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, 
-
-
-
-
-
-/* === SLIMES COLORIDOS (mesmo tamanho do original) === */
-.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
-.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=20');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
+/* === SLIMES COLORIDOS (CSS ÚNICO) === */
+.sprite.monstro-slime-verde{background-image:url('/static/sprites/monstros/slime_verde.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-azul{background-image:url('/static/sprites/monstros/slime_azul.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-vermelho{background-image:url('/static/sprites/monstros/slime_vermelho.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
+.sprite.monstro-slime-dourado{background-image:url('/static/sprites/monstros/slime_dourado.png?v=99');background-size:384px 256px;background-position:0 0;background-repeat:no-repeat;animation:monstroIdle 1s steps(6) infinite}
 @keyframes monstroIdle{from{background-position:0 0}to{background-position:-384px 0}}
+
+
+/* NPCs sempre visíveis acima do player */
+.sprite.npc, .sprite.npc-mercador, .sprite.npc-ferreiro, 
+.sprite.player{
+    z-index: 5 !important;
+}
+
+
+/* Monstros sempre visíveis quando player anda por cima */
+.sprite.monstro-slime-verde, .sprite.monstro-slime-azul, .sprite.monstro-slime-vermelho, .sprite.monstro-slime-dourado{
+    z-index: 15 !important;
+    opacity: 1 !important;
+}
+
+
+/* === NPCs (sprites) === */
+.sprite.npc-loja, .sprite.npc-mercador{
+    background-image: url('/static/sprites/npc-mercador.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+.sprite.npc-ferreiro{
+    background-image: url('/static/sprites/npc-ferreiro.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+.sprite.npc-alquimista{
+    background-image: url('/static/sprites/npc-alquimista.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+
+
+/* Fogueira animada do Lobby */
+.tile.obj-fogueira, .obj-fogueira{
+    background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Fire_animation.png');
+    background-size:96px 96px;
+    background-repeat:no-repeat;
+    background-position:center bottom;
+    animation:fogueiraAnim 0.8s steps(6) infinite;
+}
+@keyframes fogueiraAnim{
+    from{background-position:0 bottom}
+    to{background-position:-576px bottom}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_final_h.png?v=8');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_final_l.png?v=8');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=11');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=11');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=12');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=12');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=13');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=13');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=14');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=14');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=15');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=15');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=20');
+    background-size:100% 100%;
+    background-position:center;
+    image-rendering:pixelated;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=20');
+    background-size:100% 100%;
+    background-position:center;
+    image-rendering:pixelated;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=21');
+    background-size:cover;
+    background-position:center;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=21');
+    background-size:cover;
+    background-position:center;
+}
+
+
+.tile.muro_castelo, .tile.muro_topo, .tile.muro_canto{
+    background-image:url('/static/sprites/lobby/muros/muro_frente.png?v=23') !important;
+    background-size:100% 100% !important;
+    background-repeat:no-repeat !important;
+    background-position:center !important;
+    image-rendering:pixelated !important;
+    padding:0 !important;
+    margin:0 !important;
+}
+.tile.muro_vertical{
+    background-image:url('/static/sprites/lobby/muros/muro_lateral.png?v=23') !important;
+    background-size:100% 100% !important;
+    background-repeat:no-repeat !important;
+    background-position:center !important;
+    image-rendering:pixelated !important;
+    padding:0 !important;
+    margin:0 !important;
+}
 
 </style>
 </head>
@@ -518,10 +696,74 @@ function danoFlut(mx, my, txt, tipo) {
 
 // ============ RENDER ============
 
+
+async function pegarDrop(dropId) {
+    try {
+        const res = await fetch('/api/pegar_drop/' + dropId, {method: 'POST'});
+        const data = await res.json();
+        if (!data.ok) return;
+        // Animação: item voa até a hotbar
+        const dropEl = document.querySelector('.drop-chao[data-drop-id="' + dropId + '"]');
+        if (dropEl) {
+            const rect = dropEl.getBoundingClientRect();
+            const fly = document.createElement('div');
+            fly.className = 'drop-fly';
+            fly.style.backgroundImage = dropEl.style.backgroundImage;
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            document.body.appendChild(fly);
+            // Move para o inventário (canto superior direito)
+            setTimeout(() => {
+                fly.style.left = (window.innerWidth - 100) + 'px';
+                fly.style.top = '100px';
+                fly.style.width = '20px';
+                fly.style.height = '20px';
+                fly.style.opacity = '0';
+            }, 50);
+            setTimeout(() => fly.remove(), 1500);
+        }
+    } catch(e) { console.error(e); }
+}
+
+
+
+async function pegarDropChao(dropId) {
+    try {
+        const res = await fetch('/api/pegar_drop/' + dropId, {method: 'POST'});
+        const data = await res.json();
+        if (!data.ok) {
+            console.log('Drop falhou:', data.msg);
+            return;
+        }
+        // Animação: elemento voa até a hotbar
+        const el = document.querySelector('.drop-chao[data-drop-id="' + dropId + '"]');
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            const fly = document.createElement('div');
+            fly.style.cssText = 'position:fixed;width:36px;height:36px;background:url(' + el.style.backgroundImage.slice(5, -2) + ') center/contain no-repeat;left:' + rect.left + 'px;top:' + rect.top + 'px;z-index:9999;pointer-events:none;transition:all 1s ease-out;filter:drop-shadow(0 0 6px gold)';
+            document.body.appendChild(fly);
+            setTimeout(() => {
+                fly.style.left = (window.innerWidth - 80) + 'px';
+                fly.style.top = '80px';
+                fly.style.opacity = '0';
+                fly.style.transform = 'scale(0.3)';
+            }, 30);
+            setTimeout(() => fly.remove(), 1100);
+        }
+        // Remove localmente (será atualizado no próximo polling)
+        window._dropsChao = window._dropsChao.filter(d => d.id !== dropId);
+        // Recarrega o inventário
+        setTimeout(() => { if (typeof carregarEstado === 'function') carregarEstado(); }, 1100);
+    } catch(e) { console.error(e); }
+}
+
+
+
 async function carregarObjetosMapa() {
     try {
         const res = await fetch('/api/objetos');
         window._objetosMapa = await res.json();
+        
         console.log("Objetos carregados:", window._objetosMapa.length);
     } catch (e) {
         console.error("Erro objetos:", e);
@@ -538,6 +780,61 @@ function spriteMonstro(nome) {
     if (nome.includes('goblin'))   return 'monstro-goblin';
     if (nome.includes('esqueleto'))return 'monstro-esqueleto';
     return 'monstro-slime-verde';
+}
+
+
+function spriteDropItem(nome) {
+    nome = (nome || '').toLowerCase();
+    if (nome.includes('cura') || nome.includes('vermelha')) return '/static/sprites/itens/pocao-vermelha.png';
+    if (nome.includes('mana') || nome.includes('azul')) return '/static/sprites/itens/pocao-azul.png';
+    if (nome.includes('veneno') || nome.includes('verde')) return '/static/sprites/itens/pocao-verde.png';
+    if (nome.includes('adaga') && nome.includes('magic')) return '/static/sprites/itens/adaga-magica.png';
+    if (nome.includes('adaga')) return '/static/sprites/itens/adaga.png';
+    if (nome.includes('espada') && nome.includes('gelo')) return '/static/sprites/itens/espada-gelo.png';
+    if (nome.includes('espada') && nome.includes('fogo')) return '/static/sprites/itens/espada-fogo.png';
+    if (nome.includes('espada') && nome.includes('sombria')) return '/static/sprites/itens/espada-sombria.png';
+    if (nome.includes('espada') && nome.includes('veneno')) return '/static/sprites/itens/espada-veneno.png';
+    if (nome.includes('espada')) return '/static/sprites/itens/espada-aco.png';
+    if (nome.includes('cajado')) return '/static/sprites/itens/cajado.png';
+    if (nome.includes('arco')) return '/static/sprites/itens/arco.png';
+    if (nome.includes('escudo')) return '/static/sprites/itens/escudo-madeira.png';
+    if (nome.includes('machado')) return '/static/sprites/itens/machado.png';
+    if (nome.includes('lanca')) return '/static/sprites/itens/lanca.png';
+    return '/static/sprites/itens/pocao-vermelha.png';
+}
+
+
+// === PREDIÇÃO DE MOVIMENTO (evita lag visual) ===
+window._predMovendo = false;
+
+function moverPreditivo(dir) {
+    if (!J) return null;
+    const passo = {cima:[0,-1],baixo:[0,1],esq:[-1,0],dir:[1,0]}[dir];
+    if (!passo) return null;
+    const novoX = Math.max(0, Math.min(W_MAP - 1, J.x + passo[0]));
+    const novoY = Math.max(0, Math.min(H_MAP - 1, J.y + passo[1]));
+    // Se não mudou (bateu no limite), não envia
+    if (novoX === J.x && novoY === J.y) return null;
+    J.x = novoX;
+    J.y = novoY;
+    _ultimoMover = Date.now();  // ← Marca que andou (ativa animação)
+    // Renderiza IMEDIATAMENTE (sem esperar servidor)
+    render(J);
+    // Envia pro servidor em BACKGROUND (não bloqueia)
+    // Throttle: só envia pro servidor a cada 80ms
+    const agora = Date.now();
+    if (!window._ultimoEnvioServidor || agora - window._ultimoEnvioServidor > 80) {
+        window._ultimoEnvioServidor = agora;
+        fetch('/api/mover/' + dir).then(r => r.json()).then(j => {
+        if (j.msg) logMsg(j.msg);
+        // Se o servidor recusou (bloqueou), corrige a posição
+        if (j.estado) {
+            J.x = j.estado.x;
+            J.y = j.estado.y;
+        }
+        }).catch(e => console.error('mover:', e));
+    }
+    return null;
 }
 
 function render(j) {
@@ -582,27 +879,42 @@ function render(j) {
       const my = j.y - METADE + vy;
       const tipo = (j.viewport[vy] && j.viewport[vy][vx]) || "grama";
       const d = document.createElement("div");
-      d.className = "tile " + tipo;
+      // Muros viram overlay (permitem z-index correto)
+      const ehMuro = (tipo === 'muro_castelo' || tipo === 'muro_topo' || tipo === 'muro_canto');
+      if (ehMuro) {
+          d.className = "tile grama_lobby";  // chão embaixo
+      } else {
+          d.className = "tile " + tipo;
+      }
+      // Z-index baseado em Y (tiles mais embaixo ficam na frente)
 
-      if (mx === j.x && my === j.y) {
+
+      // === ORDEM DE RENDERIZAÇÃO ===
+      // 1. NPC (fundo)
+      if (npcsSet[mx+","+my]) {
+        const n = npcsSet[mx+","+my];
         const sp = document.createElement("div");
-        sp.className = "sprite player";
-        sp.id = "sprite-player";
-        sp.style.backgroundImage = "url('/static/sprites/jogador/idle-" + (_ultimoDir || "baixo") + "-0.png')";
-        const hp = document.createElement("div");
-        hp.className = "hp-ent player-hp";
-        hp.innerHTML = '<div class="fill" style="width:' + hpPct + '%"></div>';
-        sp.appendChild(hp);
+        const tipoNPC = (n[4] || "loja").toLowerCase();
+        sp.className = "sprite npc-" + tipoNPC;
+        sp.style.position = "absolute";
+        sp.style.inset = "0";
+        sp.style.zIndex = (my * 100) + 20;  // NPC
         const nom = document.createElement("div");
         nom.className = "nome-ent";
-        nom.style.color = cor;
-        nom.textContent = (j.cargo_badge ? j.cargo_badge + " " : "") + j.nome;
+        nom.style.color = "#ffee88";
+        nom.textContent = n[1];
         sp.appendChild(nom);
         d.appendChild(sp);
-      } else if (monsMap[mx+","+my]) {
+      }
+      
+      // 2. Monstro (meio)
+      if (monsMap[mx+","+my]) {
         const m = monsMap[mx+","+my];
         const sp = document.createElement("div");
         sp.className = "sprite " + spriteMonstro(m[1]);
+        sp.style.position = "absolute";
+        sp.style.inset = "0";
+        sp.style.zIndex = (my * 100) + 30;  // monstro
         const hp = document.createElement("div");
         hp.className = "hp-ent";
         const mhpPct = Math.max(0, Math.min(100, (m[4] / (m[4] + 20)) * 100));
@@ -614,22 +926,17 @@ function render(j) {
         nom.textContent = m[1] + " (" + m[4] + ")";
         sp.appendChild(nom);
         d.appendChild(sp);
-      } else if (npcsSet[mx+","+my]) {
-        const n = npcsSet[mx+","+my];
-        const sp = document.createElement("div");
-        const tipoNPC = (n[4] || "loja").toLowerCase();
-        sp.className = "sprite npc-" + tipoNPC;
-        const nom = document.createElement("div");
-        nom.className = "nome-ent";
-        nom.style.color = "#ffee88";
-        nom.textContent = n[1];
-        sp.appendChild(nom);
-        d.appendChild(sp);
-      } else if (outrosMap[mx+","+my]) {
+      }
+      
+      // 3. Outros jogadores
+      if (outrosMap[mx+","+my]) {
         const o = outrosMap[mx+","+my];
         const sp = document.createElement("div");
         sp.className = "sprite outro";
         sp.style.background = o.cor;
+        sp.style.position = "absolute";
+        sp.style.inset = "0";
+        sp.style.zIndex = (my * 100) + 10;
         const nom = document.createElement("div");
         nom.className = "nome-ent";
         nom.style.color = o.cor;
@@ -637,6 +944,44 @@ function render(j) {
         sp.appendChild(nom);
         d.appendChild(sp);
       }
+      
+      // 4. PLAYER (por cima de tudo, mesmo se estiver sobre NPC/monstro)
+      if (mx === j.x && my === j.y) {
+        const sp = document.createElement("div");
+        sp.className = "sprite player";
+        sp.id = "sprite-player";
+        sp.style.backgroundImage = "url('/static/sprites/jogador/idle-" + (_ultimoDir || "baixo") + "-0.png')";
+        sp.style.position = "absolute";
+        sp.style.inset = "0";
+        sp.style.zIndex = (my * 100) + 50;  // player
+        const hp = document.createElement("div");
+        hp.className = "hp-ent player-hp";
+        hp.innerHTML = '<div class="fill" style="width:' + hpPct + '%"></div>';
+        sp.appendChild(hp);
+        const nom = document.createElement("div");
+        nom.className = "nome-ent";
+        nom.style.color = cor;
+        nom.textContent = (j.cargo_badge ? j.cargo_badge + " " : "") + j.nome;
+        sp.appendChild(nom);
+        d.appendChild(sp);
+      }
+      
+      // Se for muro, desenha overlay com z-index alto
+      if (ehMuro) {
+          const w = document.createElement("div");
+          w.className = "muro-overlay " + tipo;
+          w.style.position = "absolute";
+          w.style.inset = "0";
+          w.style.width = TILE_PX + "px";
+          w.style.height = TILE_PX + "px";
+          w.style.backgroundImage = "url('/static/sprites/lobby/muros/muro_topo.png')";
+          w.style.backgroundSize = "cover";
+          w.style.backgroundPosition = "center top";
+          w.style.imageRendering = "pixelated";
+          w.style.zIndex = my * 100;  // muro no seu próprio Y
+          d.appendChild(w);
+      }
+      
       mapa.appendChild(d);
     }
   }
@@ -661,6 +1006,23 @@ function render(j) {
       obj_div.style.pointerEvents = "none";
       obj_div.style.zIndex = "5";
       mapa.appendChild(obj_div);
+    });
+  }
+
+  // === DROPS NO CHÃO ===
+  if (window._dropsChao && window._dropsChao.length > 0) {
+    window._dropsChao.forEach(drop => {
+      const dx = drop.x - j.x;
+      const dy = drop.y - j.y;
+      if (Math.abs(dx) > METADE || Math.abs(dy) > METADE) return;
+      const drop_div = document.createElement("div");
+      drop_div.className = "drop-chao";
+      drop_div.style.left = ((drop.x - (j.x - METADE)) * TILE_PX + 2) + "px";
+      drop_div.style.top = ((drop.y - (j.y - METADE)) * TILE_PX + 2) + "px";
+      drop_div.style.backgroundImage = "url('" + spriteDropItem(drop.item) + "')";
+      drop_div.dataset.dropId = drop.id;
+      drop_div.onclick = (e) => { e.stopPropagation(); pegarDropChao(drop.id); };
+      mapa.appendChild(drop_div);
     });
   }
 
@@ -767,27 +1129,10 @@ async function carregar() {
   render(await r.json());
 }
 
-async function mover(dir) {
-  _ultimoDir = dir;
-  if (J) {
-    const passo = {cima:[0,-1],baixo:[0,1],esq:[-1,0],dir:[1,0]}[dir];
-    if (passo) {
-      J.x = Math.max(0, Math.min((J.W_MAP||50)-1, J.x + passo[0]));
-      J.y = Math.max(0, Math.min((J.H_MAP||50)-1, J.y + passo[1]));
-      render(J);
-    }
-  }
-  if (_movendo) return;
-  if (Date.now() - _ultimoMover < 220) return;
-  _movendo = true;
-  _ultimoMover = Date.now();
-  try {
-    const r = await fetch("/api/mover/" + dir);
-    const j = await r.json();
-    if (j.msg) logMsg(j.msg);
-    if (j.estado) render(j.estado);
-  } catch(e) {}
-  _movendo = false;
+function mover(dir) {
+    _ultimoDir = dir;
+    // Chama a predição IMEDIATAMENTE (sem throttle, sem await)
+    moverPreditivo(dir);
 }
 
 async function atacar() {
@@ -1060,7 +1405,7 @@ async function atualizarGuild() {
   cont.innerHTML = h;
   ultimoGuildMsg = 0;
   carregarGuildChat();
-  if (!window._guildInt) window._guildInt = setInterval(() => { if (document.getElementById("guild-chat-msgs")) carregarGuildChat(); }, 3000);
+  if (!window._guildInt) window._guildInt = setInterval(() => { if (document.getElementById("guild-chat-msgs")) carregarGuildChat(); }, 300);
 }
 let ultimoGuildMsg = 0;
 async function carregarGuildChat() {
@@ -1117,7 +1462,7 @@ async function abrirChatPriv(id, nome) {
   document.getElementById("priv-painel").style.display = "block";
   document.getElementById("priv-chat-msgs").innerHTML = "";
   await carregarPrivChat();
-  if (!window._privInt) window._privInt = setInterval(() => { if (privAmigoAtual) carregarPrivChat(); }, 3000);
+  if (!window._privInt) window._privInt = setInterval(() => { if (privAmigoAtual) carregarPrivChat(); }, 300);
 }
 async function carregarPrivChat() {
   if (!privAmigoAtual) return;
@@ -1198,13 +1543,14 @@ async function devAcao(acao, valor, extra) {
 }
 
 // ============ POLLING ============
-setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 1000);
-setInterval(() => { if (document.hidden) return; carregarChat(false); }, 3000);
+setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 300);
+setInterval(() => { if (document.hidden) return; carregarChat(false); }, 300);
 window.addEventListener("resize", () => { if (J) render(J); });
 window.addEventListener("orientationchange", () => setTimeout(() => { if (J) render(J); }, 400));
 
 // ============ INIT ============
 carregar();
+
 </script>
 
 <div id="modal-loja" class="modal">

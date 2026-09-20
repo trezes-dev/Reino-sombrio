@@ -148,3 +148,50 @@ cd ~/rpg && git add . && git commit -m "msg" && git push origin main
 - Conta kowz = testes
 
 FIM DO DOCUMENTO
+
+---
+
+## 16. PENDÊNCIA PRINCIPAL - MUROS DO REINO
+
+### Status atual:
+Os muros do Reino estão FUNCIONAIS mas com visual feio (criados por código Python).
+Não ficaram parecidos com o estilo do Curse of Aros.
+
+### Preview aprovado (referência visual):
+http://127.0.0.1:5000/static/sprites/lobby/muros/_preview_ok.png
+
+Esse preview mostra o muro que o usuário APROVOU (topo claro + linha preta + frente escura com tijolos pretos bem definidos).
+O problema é que essa arte precisa ser aplicada corretamente no jogo.
+
+### O que fazer amanhã:
+1. Analisar o `_preview_ok.png` que já está salvo
+2. Aplicar essa arte nos muros (CSS ou sprite)
+3. Testar a física (topo na frente/trás, só grossura nas laterais)
+4. Se não funcionar, considerar contratar pixel artist no Fiverr (R$30-50)
+
+### Arquivos importantes:
+- `~/rpg/static/sprites/lobby/muros/muro_frente.png` (muro de frente/trás)
+- `~/rpg/static/sprites/lobby/muros/muro_lateral.png` (muro lateral - só grossura)
+- `~/rpg/static/sprites/lobby/muros/_preview_ok.png` (preview aprovado)
+- Backup de segurança: `~/rpg_BACKUP_LIMPEZA_20260920_0049.tar.gz`
+
+### Banco de dados - tipos de muro:
+- `muro_castelo` / `muro_topo` → muro de frente/trás
+- `muro_vertical` → muro lateral
+- `muro_canto` → canto
+
+### Problemas conhecidos:
+- Muro fica com listras pretas quando dois tiles ficam lado a lado
+- Colisão funciona (não atravessa)
+- Z-index funciona (personagem atrás do muro)
+- Portões funcionam (4 aberturas: Norte, Sul, Leste, Oeste)
+
+### Contexto visual:
+O usuário quer estilo Curse of Aros:
+- Topo claro mostrando GROSSURA do muro (visto de cima)
+- Linha preta separadora
+- Frente escura com tijolos visíveis
+
+---
+
+**FIM DA SEÇÃO DE PENDÊNCIAS**
