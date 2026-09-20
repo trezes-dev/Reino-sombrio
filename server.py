@@ -1,4 +1,3 @@
-from threading import Thread
 from flask import send_file, Flask, render_template, jsonify, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3, random, functools, time, json, threading
@@ -109,31 +108,26 @@ def tile_em(x, y):
     return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
-    """Retorna True se o tile está bloqueado."""
+    """Retorna True se o tile está bloqueado (não pode andar)."""
     c = con()
-    # Fora do mapa
-    if x < 0 or y < 0 or x >= W_MAP or y >= H_MAP:
-        c.close()
-        return True
-    # Verifica o chão
+    # 1. Verifica o chão (água, vazio)
     row = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
     if not row:
         c.close()
-        return True
-    tipo = row[0]
-    # Bloqueadores de chão
-    if tipo in ("agua", "vazio", "muro_castelo", "muro_topo", "muro_canto"):
+        return True  # Fora do mapa = bloqueado
+    tipo_chao = row[0]
+    if tipo_chao in ("agua", "vazio"):
         c.close()
         return True
-    # Verifica objetos que bloqueiam
+    # 2. Verifica objetos com colisão
     obj = c.execute("SELECT subtipo FROM mapa_objetos WHERE x=? AND y=?", (x, y)).fetchone()
     c.close()
     if obj:
         subtipo = obj[0]
-        bloqueadores = ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore',
+        # Árvores e pedras bloqueiam, flores não
+        if subtipo in ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore', 
                        'pinheiro', 'pinheiro_pequeno', 'arbusto_grande',
-                       'pedra', 'pedra_areia', 'pilar', 'estatua', 'entulho')
-        if subtipo in bloqueadores:
+                       'pedra', 'pedra_areia', 'pilar', 'estatua', 'entulho'):
             return True
     return False
 
@@ -193,7 +187,7 @@ def estado(jid):
     inv = c.execute("""SELECT i.nome, i.tipo, i.bonus, inv.qtd, i.id, inv.id, COALESCE(inv.equipado,0)
         FROM inventario inv JOIN itens i ON i.id=inv.item_id
         WHERE inv.jogador_id=? ORDER BY inv.equipado DESC, i.bonus DESC""", (jid,)).fetchall()
-    mons = c.execute("SELECT id, nome, x, y, hp, dano FROM monstros WHERE morto_em = 0").fetchall()
+    mons = c.execute("SELECT id, nome, x, y, hp FROM monstros").fetchall()
     npcs = c.execute("SELECT id, nome, x, y, tipo FROM npcs").fetchall()
     agora = time.time()
     outros_rows = c.execute("""SELECT id, nome_personagem, nome, cargo, x, y, hp, hp_max, nivel
@@ -513,69 +507,6 @@ def executar_troca(jid, args):
 
 
 
-
-def limpar_chat_antigo():
-    """Remove mensagens com mais de 15 minutos do banco."""
-    while True:
-        try:
-            time.sleep(300)  # roda a cada 5 min
-            c = con()
-            limite = time.time() - 900  # 15 min atrás
-            apagadas = c.execute("DELETE FROM mensagens WHERE ts < ?", (limite,)).rowcount
-            c.commit()
-            c.close()
-            if apagadas > 0:
-                print(f"🧹 Chat: {apagadas} mensagens antigas removidas", flush=True)
-        except Exception as e:
-            print(f"❌ Erro na limpeza do chat: {e}", flush=True)
-
-
-
-def limpar_drops_chao():
-    """Remove drops com mais de 35 segundos."""
-    while True:
-        try:
-            time.sleep(10)
-            c = con()
-            apagadas = c.execute("DELETE FROM drops_chao WHERE ts_criado < ?", (time.time() - 35,)).rowcount
-            c.commit()
-            c.close()
-            if apagadas > 0:
-                print(f"🗑️  {apagadas} drops antigos removidos", flush=True)
-        except Exception as e:
-            print(f"❌ Erro limpar drops: {e}", flush=True)
-
-@app.route('/api/pegar_drop/<int:drop_id>', methods=['POST'])
-@login_obrigatorio
-def api_pegar_drop(drop_id):
-    jid = session["jogador_id"]
-    c = con()
-    drop = c.execute("SELECT item_nome, x, y FROM drops_chao WHERE id=?", (drop_id,)).fetchone()
-    if not drop:
-        c.close()
-        return jsonify({"ok": False, "msg": "Drop não existe"})
-    item_nome, dx, dy = drop
-    # Verifica distância
-    jog = c.execute("SELECT x, y FROM jogador WHERE id=?", (jid,)).fetchone()
-    if abs(jog[0] - dx) > 1 or abs(jog[1] - dy) > 1:
-        c.close()
-        return jsonify({"ok": False, "msg": "Longe demais"})
-    # Adiciona no inventário
-    item_row = c.execute("SELECT id FROM itens WHERE nome=?", (item_nome,)).fetchone()
-    if not item_row:
-        c.close()
-        return jsonify({"ok": False, "msg": "Item não existe"})
-    item_id = item_row[0]
-    inv_row = c.execute("SELECT id, qtd FROM inventario WHERE jogador_id=? AND item_id=?", (jid, item_id)).fetchone()
-    if inv_row:
-        c.execute("UPDATE inventario SET qtd=qtd+1 WHERE id=?", (inv_row[0],))
-    else:
-        c.execute("INSERT INTO inventario (jogador_id, item_id, qtd) VALUES (?, ?, 1)", (jid, item_id))
-    c.execute("DELETE FROM drops_chao WHERE id=?", (drop_id,))
-    c.commit()
-    c.close()
-    return jsonify({"ok": True, "item": item_nome})
-
 @app.route('/api/objetos')
 @login_obrigatorio
 def api_objetos():
@@ -791,9 +722,31 @@ def api_mover(dir):
     if not noclip_ativo and bloqueia(nx, ny):
         c.close()
         return jsonify({"msg": "Bloqueado por " + tile_em(nx, ny), "estado": estado(jid)})
-
     x, y = nx, ny
     msg = "Andou para " + dir
+    m = c.execute("SELECT id, nome, dano FROM monstros WHERE x=? AND y=?", (x, y)).fetchone()
+    if m:
+        mid, mnome, mdano = m
+        arma = c.execute("""SELECT i.bonus FROM inventario inv JOIN itens i ON i.id=inv.item_id
+            WHERE inv.jogador_id=? AND i.tipo='arma' AND inv.equipado=1 LIMIT 1""", (jid,)).fetchone()
+        bonus = arma[0] if arma else 0
+        dano = max(0, mdano - bonus)
+        hp -= dano
+        ganho = random.randint(5, 15)
+        ouro += ganho
+        xp_ganho = XP_MONSTRO.get(mnome, 10)
+        xp += xp_ganho
+        msg = "Matou " + mnome + "! -" + str(dano) + " HP, +" + str(ganho) + " ouro, +" + str(xp_ganho) + " XP"
+        subiu = False
+        while xp >= int(100 * (nivel ** 1.5)):
+            xp -= int(100 * (nivel ** 1.5))
+            nivel += 1
+            hp_max += 20
+            hp = hp_max
+            subiu = True
+        if subiu:
+            msg += "  LEVEL UP! Nv " + str(nivel)
+        c.execute("DELETE FROM monstros WHERE id=?", (mid,))
     c.execute("""UPDATE jogador 
                  SET x=?, y=?, hp=?, ouro=?, xp=?, nivel=?, hp_max=?, ultimo_visto=? 
                  WHERE id=?""",
@@ -921,7 +874,7 @@ def api_atacar():
         "SELECT hp, ouro, x, y, xp, nivel, hp_max FROM jogador WHERE id=?", (jid,)).fetchone()
     alvo = None
     dist_min = 999
-    for m in c.execute("SELECT id, nome, x, y, hp, dano FROM monstros WHERE morto_em=0").fetchall():
+    for m in c.execute("SELECT id, nome, x, y, hp, dano FROM monstros").fetchall():
         d = abs(m[2] - x) + abs(m[3] - y)
         if d <= 2 and d < dist_min:
             dist_min = d
@@ -950,8 +903,7 @@ def api_atacar():
         msg = "Matou " + mnome + "! +" + str(xp_ganho) + " XP"
         if subiu:
             msg += "  LEVEL UP! Nv " + str(nivel)
-        respawn_em = time.time() + 30
-        c.execute("UPDATE monstros SET morto_em=?, respawn_em=? WHERE id=?", (time.time(), respawn_em, mid))
+        c.execute("DELETE FROM monstros WHERE id=?", (mid,))
     else:
         msg = "Atingiu " + mnome + " (-" + str(dano) + " HP)"
         c.execute("UPDATE monstros SET hp=? WHERE id=?", (mhp_novo, mid))
@@ -963,30 +915,6 @@ def api_atacar():
     return jsonify({"msg": msg, "estado": estado(jid)})
 
 
-
-
-@app.route('/api/chat/enviar', methods=['POST'])
-@login_obrigatorio
-def api_chat_enviar():
-    jid = session["jogador_id"]
-    data = request.get_json() or {}
-    texto = (data.get('texto') or '').strip()
-    canal = (data.get('canal') or 'global').strip()
-    if not texto:
-        return jsonify({"ok": False, "msg": "vazio"})
-    if len(texto) > 200:
-        texto = texto[:200]
-    # Comandos começam com / — só devolve pra o frontend processar
-    if texto.startswith('/'):
-        return jsonify({"ok": True, "cmd": texto})
-    c = con()
-    row = c.execute("SELECT x, y FROM jogador WHERE id=?", (jid,)).fetchone()
-    x, y = row[0], row[1]
-    c.execute("INSERT INTO mensagens (jogador_id, canal, texto, x, y, ts) VALUES (?, ?, ?, ?, ?, ?)",
-              (jid, canal, texto, x, y, time.time()))
-    c.commit()
-    c.close()
-    return jsonify({"ok": True})
 
 @app.route("/api/chat/mensagens")
 @login_obrigatorio
@@ -1325,68 +1253,26 @@ def api_vender(inv_id):
 
 
 def ia_monstros():
-    """IA: move monstros vivos + respawna os mortos após 30s."""
-    import math
     while True:
+        time.sleep(3)
         try:
-            time.sleep(2)
             c = con()
-            agora = time.time()
-            
-            # 1. RESPAWN: monstros mortos voltam após 30s
-            mortos = c.execute(
-                "SELECT id, home_x, home_y FROM monstros WHERE morto_em > 0 AND respawn_em <= ?",
-                (agora,)
-            ).fetchall()
-            for (mid, hx, hy) in mortos:
-                # Volta pra home (ou posição atual se home não existir)
-                nx = hx if hx else 100
-                ny = hy if hy else 100
-                c.execute("UPDATE monstros SET x=?, y=?, morto_em=0, respawn_em=0, hp=CASE WHEN nome='Slime Vermelho' THEN 100 WHEN nome='Slime Azul' THEN 60 WHEN nome='Slime Dourado' THEN 80 ELSE 30 END WHERE id=?",
-                          (nx, ny, mid))
-                print(f"🔄 Monstro {mid} respawnou em ({nx},{ny})", flush=True)
-            
-            # 2. MOVIMENTO: só monstros vivos
-            monstros = c.execute(
-                "SELECT id, nome, x, y, home_x, home_y, home_raio FROM monstros WHERE morto_em = 0"
-            ).fetchall()
-            
-            for m in monstros:
-                mid, nome, mx, my, hx, hy, raio = m
-                if hx is None or hy is None:
-                    hx, hy, raio = mx, my, 12
-                
-                dist_home = math.sqrt((mx - hx)**2 + (my - hy)**2)
-                if dist_home > raio:
-                    dx = 1 if mx < hx else (-1 if mx > hx else 0)
-                    dy = 1 if my < hy else (-1 if my > hy else 0)
-                    nx, ny = mx + dx, my + dy
-                else:
-                    direcoes = [("cima", 0, -1), ("baixo", 0, 1), ("esq", -1, 0), ("dir", 1, 0)]
-                    _, dx, dy = random.choice(direcoes)
-                    nx, ny = mx + dx, my + dy
-                
-                if not (0 <= nx < 200 and 0 <= ny < 200):
+            monstros = c.execute("SELECT id, x, y FROM monstros").fetchall()
+            for mid, mx, my in monstros:
+                dx, dy = random.choice([(0,-1),(0,1),(-1,0),(1,0)])
+                nx, ny = mx + dx, my + dy
+                if nx < 0 or ny < 0 or nx >= W_MAP or ny >= H_MAP:
                     continue
                 if bloqueia(nx, ny):
                     continue
-                outro = c.execute("SELECT 1 FROM monstros WHERE x=? AND y=? AND id!=? AND morto_em=0", (nx, ny, mid)).fetchone()
-                if outro:
+                existe = c.execute("SELECT id FROM monstros WHERE x=? AND y=?", (nx, ny)).fetchone()
+                if existe:
                     continue
-                jog = c.execute("SELECT 1 FROM jogador WHERE x=? AND y=?", (nx, ny)).fetchone()
-                if jog:
-                    continue
-                
                 c.execute("UPDATE monstros SET x=?, y=? WHERE id=?", (nx, ny, mid))
-            
             c.commit()
             c.close()
         except Exception as e:
-            print("Erro ia_monstros:", e, flush=True)
-
-
-Thread(target=limpar_chat_antigo, daemon=True).start()
-Thread(target=limpar_drops_chao, daemon=True).start()
+            print("Erro ia_monstros:", e)
 
 if __name__ == "__main__":
     carregar_mapa()

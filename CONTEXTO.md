@@ -195,3 +195,9 @@ O usuário quer estilo Curse of Aros:
 ---
 
 **FIM DA SEÇÃO DE PENDÊNCIAS**
+
+### Sessão 20/09/2026 (tarde) - Teleporte no mapa
+- Clique/toque no mapa grande teleporta (só dev)
+- Usa onclick + ontouchstart direto no HTML (funciona no celular)
+- Sem confirmação, sem mensagem pra player comum
+- Função tpMapa() no index.html
