@@ -201,3 +201,36 @@ O usuário quer estilo Curse of Aros:
 - Usa onclick + ontouchstart direto no HTML (funciona no celular)
 - Sem confirmação, sem mensagem pra player comum
 - Função tpMapa() no index.html
+
+---
+
+### Sessão 20/09/2026 (tarde/noite) - Teleporte no mapa + limpeza
+
+**Funcionalidades:**
+- Teleporte pelo mapa grande (só dev): clique/toque → teleporta direto
+- Usa `onclick` + `ontouchstart` direto no HTML (funciona no celular)
+- Função `tpMapa(e)` no index.html
+- Sem confirmação, sem mensagem pra player comum
+
+**Mudanças no mapa:**
+- Muros REMOVIDOS do banco (lobby ficou só grama + caminhos + NPCs)
+- Backup do banco: `rpg.db.bak_lobby_20260920_1641`
+
+**Pendências (o que NÃO foi feito):**
+- [ ] Reconstruir muros do lobby usando editor (Tiled, Tiled Map Editor 2D, ou similar)
+- [ ] Sprites dos muros: `_preview_ok.png` aprovado (frente + lateral)
+- [ ] Testar slimes verde e azul (o vermelho tá OK)
+- [ ] Sistema de drops de itens
+- [ ] Colisão com árvores/objetos
+- [ ] Pedra lisa nas Ruínas (atual é tijolo)
+- [ ] Chat (testar envio)
+
+**Arquivos importantes:**
+- `~/rpg/static/sprites/lobby/muros/_preview_ok.png` (referência aprovada)
+- `~/rpg/gerar_muro_externo.py` (script pra adicionar muros externos)
+- `~/rpg/rpg.db.bak_lobby_20260920_1641` (backup do banco bom)
+
+**Observações:**
+- Os sprites `muro_frente.png` e `muro_lateral.png` foram extraídos do `_preview_ok.png`
+- Bug do CSS duplicado de muros foi resolvido (limpeza)
+- Teleporte só funciona pra cargo `dev`
