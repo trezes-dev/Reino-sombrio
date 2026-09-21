@@ -137,7 +137,7 @@ def tile_em(x, y):
 def bloqueia(x, y):
     """True se o tile esta bloqueado. Le do cache — zero queries."""
     tipo_chao = tile_em(x, y)
-    if tipo_chao in ("agua", "vazio", "muro_topo", "muro_vertical", "muro2_topo", "muro2_vertical", "muro_castelo", "muro_canto"):
+    if tipo_chao in ("agua", "vazio"):
         return True
     subtipo = OBJETOS_CACHE.get((x, y))
     if subtipo in ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore',
