@@ -59,15 +59,16 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 .obj-arvore_borda{background-image:url('/static/sprites/terreno/ruinas_temple/PNG/Trees_grass_alternative_fit.png');background-size:contain;background-repeat:no-repeat}
 
 /* ==== ENTIDADES ==== */
-.sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
+.sprite{position:absolute;inset:0;border:2px solid magenta;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
 .sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 
 to{background-position:-384px 0}}
-.sprite.npc-loja{background-image:url("/static/sprites/npc-mercador.png?v=99")}
+.sprite.npc-loja{background-image:url('/static/sprites/npc-mercador.png?v=3');width:40px;height:40px;background-color:red}
 .sprite.npc-ferreiro{background-image:url('/static/sprites/npc-ferreiro.png?v=2')}
 .sprite.npc-alquimista{background-image:url('/static/sprites/npc-alquimista.png?v=2')}
+.sprite.npc-mercador{background-image:url('/static/sprites/npc-mercador.png?v=2')}
 .sprite.outro{border-radius:50%;box-shadow:0 0 8px #fff}
 .nome-ent{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;z-index:10;pointer-events:none;font-weight:bold}
 .hp-ent{position:absolute;top:-6px;left:8px;right:8px;height:4px;background:#000;border-radius:2px;z-index:10;overflow:hidden}
@@ -563,10 +564,6 @@ function render(j) {
         const sp = document.createElement("div");
         const tipoNPC = (n[4] || "loja").toLowerCase();
         sp.className = "sprite npc-" + tipoNPC;
-        sp.style.backgroundImage = "url('/static/sprites/npc-" + (tipoNPC === "loja" ? "mercador" : tipoNPC) + ".png?v=99')";
-        sp.style.backgroundSize = "contain";
-        sp.style.backgroundRepeat = "no-repeat";
-        sp.style.backgroundPosition = "center";
         const nom = document.createElement("div");
         nom.className = "nome-ent";
         nom.style.color = "#ffee88";

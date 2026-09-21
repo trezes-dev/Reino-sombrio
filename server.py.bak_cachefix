@@ -31,7 +31,6 @@ CLASSES = {
 }
 
 MAPA_CACHE = {}
-OBJETOS_CACHE = {}
 
 def con():
     conn = sqlite3.connect(DB, timeout=10.0)
@@ -103,7 +102,6 @@ def carregar_mapa():
     rows = c.execute("SELECT x, y, tipo FROM mapa_tiles").fetchall()
     c.close()
     MAPA_CACHE = {(r[0], r[1]): r[2] for r in rows}
-    recarregar_objetos()
     print("Mapa carregado: " + str(len(MAPA_CACHE)) + " tiles")
 
 
@@ -117,33 +115,36 @@ def recarregar_mapa():
     for x, y, tipo in c.execute("SELECT x, y, tipo FROM mapa_tiles").fetchall():
         MAPA_CACHE[(x, y)] = tipo
     c.close()
-    recarregar_objetos()
     print("Mapa recarregado: " + str(len(MAPA_CACHE)) + " tiles")
 
-def recarregar_objetos():
-    global OBJETOS_CACHE
-    c = con()
-    OBJETOS_CACHE = {(r[0], r[1]): r[2] for r in c.execute("SELECT x, y, subtipo FROM mapa_objetos").fetchall()}
-    c.close()
-
 def tile_em(x, y):
-    """Le do cache em memoria — zero queries SQLite."""
-    t = MAPA_CACHE.get((x, y))
-    if t is None:
-        t = MAPA_CACHE.get(str(x) + "," + str(y))
-    return t if t is not None else "agua"
-
+    c = con()
+    r = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
+    c.close()
+    return r[0] if r else "agua"
 
 def bloqueia(x, y):
-    """True se o tile esta bloqueado. Le do cache — zero queries."""
-    tipo_chao = tile_em(x, y)
+    """Retorna True se o tile está bloqueado (não pode andar)."""
+    c = con()
+    # 1. Verifica o chão (água, vazio)
+    row = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
+    if not row:
+        c.close()
+        return True  # Fora do mapa = bloqueado
+    tipo_chao = row[0]
     if tipo_chao in ("agua", "vazio"):
+        c.close()
         return True
-    subtipo = OBJETOS_CACHE.get((x, y))
-    if subtipo in ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore',
-                   'pinheiro', 'pinheiro_pequeno', 'arbusto_grande',
-                   'pedra', 'pedra_areia', 'pilar', 'estatua', 'entulho'):
-        return True
+    # 2. Verifica objetos com colisão
+    obj = c.execute("SELECT subtipo FROM mapa_objetos WHERE x=? AND y=?", (x, y)).fetchone()
+    c.close()
+    if obj:
+        subtipo = obj[0]
+        # Árvores e pedras bloqueiam, flores não
+        if subtipo in ('arvore_grande', 'arvore_escura', 'arvore_media', 'arvore', 
+                       'pinheiro', 'pinheiro_pequeno', 'arbusto_grande',
+                       'pedra', 'pedra_areia', 'pilar', 'estatua', 'entulho'):
+            return True
     return False
 
 
