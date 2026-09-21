@@ -307,3 +307,76 @@ ps aux | grep server.py | grep -v grep
 
 **Se CPU > 5% sem ninguém:** thread rodando
 **Solução prioritária:** otimizar /api/estado pra mandar só 15x15 ao redor do jogador
+
+---
+
+## 21. RELATÓRIO SESSÃO 20/09/2026 (noite) - TRAVAMENTO
+
+**Status: JOGO TRAVANDO**
+
+**Feito nesta sessão:**
+- Mapa 200x200 completo (4 biomas + 2 anéis + cruz + fonte)
+- Anel 1 (lobby): x=88-112 | Anel 2 (NPCs): x=76-124
+- 4 biomas FORA do anel 2 (sem cruz separando)
+- 12 slimes spawnados longe do lobby
+- bloqueia() simplificada (só água + muros)
+- tile_em() usando MAPA_CACHE recarregado no boot
+- Minimapa com cores corretas
+- CSS slimes coloridos
+
+**PROBLEMA:**
+- CPU do server.py 16-20% sem ninguém conectado
+- Tela azul 3-5s ao entrar
+- Não consegue andar (trava no lugar)
+- Cada toque demora 10-15s pra mover 1 tile
+- /api/estado demora pra responder
+
+**HIPÓTESES:**
+1. ia_monstros em loop pesado
+2. estado() abre conexão SQLite por tile (225 conexões/request)
+3. /api/estado manda 40000 tiles (deveria mandar só 15x15 = 225)
+4. Render do cliente pesado
+5. SQLite WAL travando por concorrência
+
+**COMANDOS DEBUG:**
+ps aux | grep server.py | grep -v grep
+tail -50 /tmp/srv.log
+ls /proc/$(pgrep -f server.py)/fd/ | grep -c socket
+
+**BACKUPS:**
+server.py.bak_ia, server.py.bak_cpu2, server.py.bak_calma
+templates/index.html.bak_calma
+
+**TAREFAS AMANHÃ (prioridade):**
+1. [URGENTE] Resolver travamento:
+   - ps aux sem cliente: se CPU > 5%, tem thread rodando
+   - Se ia_monstros: reescrever com 1 conexão só, sleep 5s
+   - Se estado(): mandar só viewport 15x15 (não 40000)
+2. [URGENTE] Otimizar /api/estado (viewport em vez de mapa todo)
+3. [MÉDIO] Slime verde invisível (CSS com blocos quebrados)
+4. [MÉDIO] Verificar bloqueia() (MAPA_CACHE recarregado?)
+5. [BAIXO] Polling cliente: testar 5s (já tá em 3s)
+
+**ANOTAÇÕES TÉCNICAS:**
+- Anel 1 (lobby): x=88-112, y=88-112
+- Anel 2 (NPCs): x=76-124, y=76-124
+- Portões: 3 tiles em (99-101, 76/124) e (76/124, 99-101)
+- Cruz de caminhos DENTRO dos anéis
+- Tiles: grama_lobby, grama_normal, grama_escura, areia_deserto, pedra_ruinas, terra_caminho
+- Muros: muro_topo, muro_vertical, muro2_topo, muro2_vertical
+- Sprites anel 1: muro_frente.png / muro_lateral.png
+- Sprites anel 2: muro2_frente.png / muro2_vertical.png
+
+## 22. PRÓXIMA SESSÃO - PONTO DE PARTIDA
+
+**Estado ao dormir:**
+- Servidor rodando com CPU ~16%
+- Jogo travando
+- ia_monstros removida do código
+- Commit: b58898e
+
+**Primeiro comando ao acordar:**
+ps aux | grep server.py | grep -v grep
+
+**Se CPU > 5% sem ninguém:** thread rodando
+**Solução prioritária:** otimizar /api/estado pra mandar só 15x15 ao redor do jogador
