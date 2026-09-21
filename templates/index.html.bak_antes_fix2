@@ -527,14 +527,12 @@ function render(j) {
       const tipo = (j.viewport[vy] && j.viewport[vy][vx]) || "grama";
       const d = document.createElement("div");
       d.className = "tile " + tipo;
-      if (tipo.indexOf("muro") === 0) d.style.zIndex = my * 10 + 3;
-      if (tipo.indexOf("muro") === 0) d.style.zIndex = my * 10 + 3;
+      d.style.zIndex = my * 10;
 
       if (mx === j.x && my === j.y) {
-        
+        d.style.zIndex = j.y * 10 + 5;
         const sp = document.createElement("div");
         sp.className = "sprite player";
-        sp.style.zIndex = j.y * 10 + 5;
 
         sp.id = "sprite-player";
         sp.style.backgroundImage = "url('/static/sprites/jogador/idle-" + (_ultimoDir || "baixo") + "-0.png')";
@@ -552,7 +550,6 @@ function render(j) {
         const m = monsMap[mx+","+my];
         const sp = document.createElement("div");
         sp.className = "sprite " + spriteMonstro(m[1]);
-        sp.style.zIndex = my * 10 + 5;
         const hp = document.createElement("div");
         hp.className = "hp-ent";
         const mhpPct = Math.max(0, Math.min(100, (m[4] / (m[4] + 20)) * 100));
@@ -569,7 +566,6 @@ function render(j) {
         const sp = document.createElement("div");
         const tipoNPC = (n[4] || "loja").toLowerCase();
         sp.className = "sprite npc-" + tipoNPC;
-        sp.style.zIndex = my * 10 + 5;
         sp.style.backgroundImage = "url('/static/sprites/npc-" + (tipoNPC === "loja" ? "mercador" : tipoNPC) + ".png?v=99')";
         sp.style.backgroundSize = "contain";
         sp.style.backgroundRepeat = "no-repeat";

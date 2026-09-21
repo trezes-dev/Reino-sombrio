@@ -60,7 +60,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#0a0a14;color:#fff
 
 /* ==== ENTIDADES ==== */
 .sprite{position:absolute;inset:0;background-size:cover;background-position:center;image-rendering:pixelated;z-index:3;transition:transform 0.4s ease-out}
-.sprite.player{background-image:url("/static/sprites/jogador/idle-baixo-0.png")}
+.sprite.player{background-image:url('/static/sprites/jogador/idle-baixo-0.png');z-index:5}
 .sprite.monstro-goblin{background-image:url('/static/sprites/monstros/goblin.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 .sprite.monstro-esqueleto{background-image:url('/static/sprites/monstros/esqueleto.png?v=2');background-size:384px 256px;background-position:0 0;animation:monstroIdle 1s steps(6) infinite}
 
@@ -527,15 +527,10 @@ function render(j) {
       const tipo = (j.viewport[vy] && j.viewport[vy][vx]) || "grama";
       const d = document.createElement("div");
       d.className = "tile " + tipo;
-      if (tipo.indexOf("muro") === 0) d.style.zIndex = my * 10 + 3;
-      if (tipo.indexOf("muro") === 0) d.style.zIndex = my * 10 + 3;
 
       if (mx === j.x && my === j.y) {
-        
         const sp = document.createElement("div");
         sp.className = "sprite player";
-        sp.style.zIndex = j.y * 10 + 5;
-
         sp.id = "sprite-player";
         sp.style.backgroundImage = "url('/static/sprites/jogador/idle-" + (_ultimoDir || "baixo") + "-0.png')";
         const hp = document.createElement("div");
@@ -552,7 +547,6 @@ function render(j) {
         const m = monsMap[mx+","+my];
         const sp = document.createElement("div");
         sp.className = "sprite " + spriteMonstro(m[1]);
-        sp.style.zIndex = my * 10 + 5;
         const hp = document.createElement("div");
         hp.className = "hp-ent";
         const mhpPct = Math.max(0, Math.min(100, (m[4] / (m[4] + 20)) * 100));
@@ -569,7 +563,6 @@ function render(j) {
         const sp = document.createElement("div");
         const tipoNPC = (n[4] || "loja").toLowerCase();
         sp.className = "sprite npc-" + tipoNPC;
-        sp.style.zIndex = my * 10 + 5;
         sp.style.backgroundImage = "url('/static/sprites/npc-" + (tipoNPC === "loja" ? "mercador" : tipoNPC) + ".png?v=99')";
         sp.style.backgroundSize = "contain";
         sp.style.backgroundRepeat = "no-repeat";
@@ -614,7 +607,7 @@ function render(j) {
       obj_div.style.backgroundRepeat = "no-repeat";
       obj_div.style.backgroundPosition = "center";
       obj_div.style.pointerEvents = "none";
-      obj_div.style.zIndex = obj.y * 10 + 3;
+      obj_div.style.zIndex = "5";
       mapa.appendChild(obj_div);
     });
   }
