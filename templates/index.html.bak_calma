@@ -1168,7 +1168,7 @@ async function devAcao(acao, valor, extra) {
 }
 
 // ============ POLLING ============
-setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 3000);
+setInterval(async () => { if (document.hidden) return; try { const r = await fetch("/api/estado"); if (r.ok) render(await r.json()); } catch(e) {} }, 1000);
 setInterval(() => { if (document.hidden) return; carregarChat(false); }, 3000);
 window.addEventListener("resize", () => { if (J) render(J); });
 window.addEventListener("orientationchange", () => setTimeout(() => { if (J) render(J); }, 400));

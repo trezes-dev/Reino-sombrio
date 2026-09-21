@@ -104,24 +104,8 @@ def carregar_mapa():
     MAPA_CACHE = {(r[0], r[1]): r[2] for r in rows}
     print("Mapa carregado: " + str(len(MAPA_CACHE)) + " tiles")
 
-
-
-def recarregar_mapa():
-    global MAPA_CACHE
-    c = con()
-    MAPA_CACHE = {row[0]: row[1] for row in c.execute("SELECT (x || ',' || y), tipo FROM mapa_tiles").fetchall()}
-    # Precisa ser tupla (x,y)
-    MAPA_CACHE = {}
-    for x, y, tipo in c.execute("SELECT x, y, tipo FROM mapa_tiles").fetchall():
-        MAPA_CACHE[(x, y)] = tipo
-    c.close()
-    print("Mapa recarregado: " + str(len(MAPA_CACHE)) + " tiles")
-
 def tile_em(x, y):
-    c = con()
-    r = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
-    c.close()
-    return r[0] if r else "agua"
+    return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
     """Retorna True se o tile está bloqueado (não pode andar)."""
@@ -542,16 +526,10 @@ def minimapa_png():
     CORES = {
         'grama_lobby':    (144, 238, 144),
         'grama_floresta': (34, 139, 34),
-        'grama_normal':   (34, 139, 34),
         'grama_escura':   (0, 100, 0),
         'areia_deserto':  (238, 214, 175),
         'pedra_ruinas':   (105, 105, 105),
         'terra_caminho':  (160, 82, 45),
-        'muro_topo':      (169, 169, 169),
-        'muro_vertical':  (120, 120, 120),
-        'muro2_topo':     (80, 80, 90),
-        'muro2_vertical': (60, 60, 70),
-        'pedra_ruinas':   (105, 105, 105),
     }
     
     conn = sqlite3.connect('rpg.db')
@@ -1274,31 +1252,10 @@ def api_vender(inv_id):
 
 
 
-
-
-SLIME_SPAWNS = [
-    ("Slime Verde", 30, 30), ("Slime Verde", 40, 40), ("Slime Verde", 50, 30),
-    ("Slime Azul", 30, 140), ("Slime Azul", 40, 150), ("Slime Azul", 50, 140),
-    ("Slime Verde", 140, 30), ("Slime Verde", 150, 40), ("Slime Verde", 160, 30),
-    ("Slime Vermelho", 140, 140), ("Slime Vermelho", 150, 150), ("Slime Vermelho", 160, 140),
-]
-
-def spawn_slimes_se_faltando():
-    c = con()
-    n = c.execute("SELECT COUNT(*) FROM monstros").fetchone()[0]
-    if n < len(SLIME_SPAWNS):
-        for nome, x, y in SLIME_SPAWNS:
-            existe = c.execute("SELECT id FROM monstros WHERE nome=? AND x=? AND y=?", (nome, x, y)).fetchone()
-            if not existe:
-                c.execute("INSERT INTO monstros (nome, x, y, hp, dano) VALUES (?,?,?,?,?)", (nome, x, y, 50, 5))
-        c.commit()
-    c.close()
-
-def ia_monstros_DESATIVADA():
+def ia_monstros():
     while True:
         time.sleep(3)
         try:
-            # spawn_slimes_se_faltando()
             c = con()
             monstros = c.execute("SELECT id, x, y FROM monstros").fetchall()
             for mid, mx, my in monstros:
@@ -1319,9 +1276,7 @@ def ia_monstros_DESATIVADA():
 
 if __name__ == "__main__":
     carregar_mapa()
-    recarregar_mapa()
-    # spawn_slimes_se_faltando()
-    print("Spawn inicial OK")
+    threading.Thread(target=ia_monstros, daemon=True).start()
     print("IA de monstros iniciada")
     import os
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

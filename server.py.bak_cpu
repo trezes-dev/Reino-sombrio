@@ -1294,11 +1294,11 @@ def spawn_slimes_se_faltando():
         c.commit()
     c.close()
 
-def ia_monstros_DESATIVADA():
+def ia_monstros():
     while True:
         time.sleep(3)
         try:
-            # spawn_slimes_se_faltando()
+            spawn_slimes_se_faltando()
             c = con()
             monstros = c.execute("SELECT id, x, y FROM monstros").fetchall()
             for mid, mx, my in monstros:
@@ -1320,8 +1320,9 @@ def ia_monstros_DESATIVADA():
 if __name__ == "__main__":
     carregar_mapa()
     recarregar_mapa()
-    # spawn_slimes_se_faltando()
+    spawn_slimes_se_faltando()
     print("Spawn inicial OK")
+    threading.Thread(target=ia_monstros, daemon=True).start()
     print("IA de monstros iniciada")
     import os
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -104,24 +104,8 @@ def carregar_mapa():
     MAPA_CACHE = {(r[0], r[1]): r[2] for r in rows}
     print("Mapa carregado: " + str(len(MAPA_CACHE)) + " tiles")
 
-
-
-def recarregar_mapa():
-    global MAPA_CACHE
-    c = con()
-    MAPA_CACHE = {row[0]: row[1] for row in c.execute("SELECT (x || ',' || y), tipo FROM mapa_tiles").fetchall()}
-    # Precisa ser tupla (x,y)
-    MAPA_CACHE = {}
-    for x, y, tipo in c.execute("SELECT x, y, tipo FROM mapa_tiles").fetchall():
-        MAPA_CACHE[(x, y)] = tipo
-    c.close()
-    print("Mapa recarregado: " + str(len(MAPA_CACHE)) + " tiles")
-
 def tile_em(x, y):
-    c = con()
-    r = c.execute("SELECT tipo FROM mapa_tiles WHERE x=? AND y=?", (x, y)).fetchone()
-    c.close()
-    return r[0] if r else "agua"
+    return MAPA_CACHE.get((x, y), "agua")
 
 def bloqueia(x, y):
     """Retorna True se o tile está bloqueado (não pode andar)."""
@@ -1294,11 +1278,11 @@ def spawn_slimes_se_faltando():
         c.commit()
     c.close()
 
-def ia_monstros_DESATIVADA():
+def ia_monstros():
     while True:
         time.sleep(3)
         try:
-            # spawn_slimes_se_faltando()
+            spawn_slimes_se_faltando()
             c = con()
             monstros = c.execute("SELECT id, x, y FROM monstros").fetchall()
             for mid, mx, my in monstros:
@@ -1319,9 +1303,9 @@ def ia_monstros_DESATIVADA():
 
 if __name__ == "__main__":
     carregar_mapa()
-    recarregar_mapa()
-    # spawn_slimes_se_faltando()
+    spawn_slimes_se_faltando()
     print("Spawn inicial OK")
+    threading.Thread(target=ia_monstros, daemon=True).start()
     print("IA de monstros iniciada")
     import os
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
