@@ -309,3 +309,30 @@ ps aux | grep server.py | grep -v grep
 **Solução prioritária:** otimizar /api/estado pra mandar só 15x15 ao redor do jogador
 
 ---
+
+## 24. Sessao 21/09/2026 - Colisao muros + z-index OK
+
+**RESOLVIDO:**
+- ✅ Colisao nos muros dos 2 aneis (bloqueia() inclui muro_topo/vertical/muro2_*)
+- ✅ Sprite do Mercador (override via JS no backgroundImage)
+- ✅ z-index dinamico nos muros (my * 10 + 3) e objetos (obj.y * 10 + 3)
+- ✅ Player/NPC/monstro sprites com z-index (my * 10 + 5) - sem mais corte
+- ✅ Player anda, camera segue normal
+
+**O QUE NAO FUNCIONA (nao tentar de novo):**
+- ❌ Tirar sprites de dentro dos tiles com `style.inset="auto"` — QUEBRA TUDO no Chrome Android. `inset` nao e reconhecido. Usar sempre top/left/right/bottom individuais.
+- ❌ z-index = 0 em todos os tiles — cria contexto de empilhamento e corta sprites
+- ❌ z-index baseado em `j.y` sem escala (empata com muro do mesmo Y e some)
+
+**PENDENCIAS (proximas sessoes):**
+- [ ] Muro ainda "some" um pedaco quando player encosta de certos angulos
+- [ ] Bush_simple1_1.png dá 404 (objeto barril sem sprite)
+- [ ] Testar slimes verde e azul (vermelho OK)
+- [ ] Drops de itens
+- [ ] Chat
+
+**BACKUPS:**
+- `~/rpg_BACKUP_OK_20260921_*.tar.gz` (código + assets)
+- `~/rpg/rpg.db.bak_sessao_ok_20260921_*` (banco)
+- `~/rpg/templates/index.html.bak_antes_refatorar` (antes do refactor que quebrou)
+- `~/rpg/server.py.bak_antes_colisao_muro` (antes do fix de colisão)

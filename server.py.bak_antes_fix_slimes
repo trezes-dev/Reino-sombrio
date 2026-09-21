@@ -1276,12 +1276,10 @@ def api_vender(inv_id):
 
 
 SLIME_SPAWNS = [
-    # Q1 Sup Esq (grama_escura) -> Azul
-    ("Slime Azul", 30, 30), ("Slime Azul", 50, 50), ("Slime Azul", 25, 70),
-    # Q2 Sup Dir (grama_normal) -> Verde
-    ("Slime Verde", 150, 30), ("Slime Verde", 170, 50), ("Slime Verde", 140, 60),
-    # Q4 Inf Dir (pedra_ruinas) -> Vermelho
-    ("Slime Vermelho", 150, 150), ("Slime Vermelho", 170, 140), ("Slime Vermelho", 140, 165),
+    ("Slime Verde", 30, 30), ("Slime Verde", 40, 40), ("Slime Verde", 50, 30),
+    ("Slime Azul", 30, 140), ("Slime Azul", 40, 150), ("Slime Azul", 50, 140),
+    ("Slime Verde", 140, 30), ("Slime Verde", 150, 40), ("Slime Verde", 160, 30),
+    ("Slime Vermelho", 140, 140), ("Slime Vermelho", 150, 150), ("Slime Vermelho", 160, 140),
 ]
 
 def spawn_slimes_se_faltando():
