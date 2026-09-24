@@ -4,7 +4,13 @@ import sqlite3, random, functools, time, json, threading
 
 app = Flask(__name__)
 app.secret_key = "troque-essa-chave-por-algo-aleatorio-grande"
-DB = "rpg.db"
+import os as _os, shutil as _shutil
+_BASE = _os.path.dirname(_os.path.abspath(__file__))
+DB = _os.path.join(_BASE, "rpg.db")
+_SEED = _os.path.join(_BASE, "rpg_seed.db")
+if (not _os.path.exists(DB) or _os.path.getsize(DB) < 100000) and _os.path.exists(_SEED):
+    _shutil.copy(_SEED, DB)
+    print("[BOOT] rpg.db restaurado do seed")
 W_MAP = 200
 H_MAP = 200
 VIEW = 41
@@ -553,7 +559,7 @@ def minimapa_png():
         'pedra_ruinas':   (105, 105, 105),
     }
     
-    conn = sqlite3.connect('rpg.db')
+    conn = sqlite3.connect(DB)
     cursor = conn.cursor()
     
     # Cria imagem 200x200 (1 pixel por tile)
@@ -600,7 +606,7 @@ def minimapa_png():
 
 @app.route('/api/mapa_completo')
 def api_mapa_completo():
-    conn = sqlite3.connect('rpg.db')
+    conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT x, y, tipo FROM mapa_tiles")
