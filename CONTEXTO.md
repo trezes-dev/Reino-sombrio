@@ -336,3 +336,76 @@ ps aux | grep server.py | grep -v grep
 - `~/rpg/rpg.db.bak_sessao_ok_20260921_*` (banco)
 - `~/rpg/templates/index.html.bak_antes_refatorar` (antes do refactor que quebrou)
 - `~/rpg/server.py.bak_antes_colisao_muro` (antes do fix de colisão)
+
+## 25. Sessao 21/09/2026 (continuacao) - Spawn slimes por bioma
+
+**RESOLVIDO:**
+- ✅ Slimes spawnam no bioma correto:
+  - Azul -> Q1 Sup Esq (grama_escura)
+  - Verde -> Q2 Sup Dir (grama_normal)
+  - Vermelho -> Q4 Inf Dir (pedra_ruinas)
+  - Deserto (Q3) -> sem slimes
+- ✅ SLIME_SPAWNS corrigido no server.py
+- ✅ Banco: 9 slimes (3 de cada cor) nos lugares certos
+
+**BACKUPS:**
+- server.py.bak_antes_fix_slimes
+
+**PENDENCIAS:**
+- [ ] Slime aparece muito pequeno (polimento do sprite, opcional)
+- [ ] Muro "some" em certos angulos
+- [ ] Bush_simple1_1.png 404
+- [ ] Drops de itens
+- [ ] Chat
+
+---
+
+## 26. Sessão 24/09/2026 — Fix Render (tela preta + minimapa)
+
+### 🎯 Descobertas
+- **Render tem filesystem efêmero:** o `rpg.db` é apagado a cada hibernação/redeploy
+- Isso causava tela preta no Render (banco vazio = sem tiles, sem contas, sem NPCs)
+- **`Pillow` não estava no `requirements.txt`** → `/minimapa.png` dava erro 500
+- **`rpg.db` estava versionado no git** → sobrescrevia o banco local com versão antiga
+
+### ✅ Soluções aplicadas
+
+#### 1. Seed do banco no boot (`server.py`)
+- Adicionado no topo do arquivo: cópia automática de `rpg_seed.db` → `rpg.db` se o DB não existir ou for < 100 KB
+- `DB` agora é caminho absoluto (`os.path.join(BASE, "rpg.db")`)
+- 3 `sqlite3.connect()` trocados de `'rpg.db'` para `DB`
+- Log de boot esperado: `[BOOT] rpg.db restaurado do seed` + `Mapa carregado: 40000 tiles`
+
+#### 2. `requirements.txt` ganhou `Pillow`
+- Antes: só `Flask` + `Werkzeug`
+- Agora: `Flask`, `Werkzeug`, `Pillow`
+
+#### 3. `rpg.db` removido do git
+- `git rm --cached rpg.db`
+- Adicionado ao `.gitignore`
+- `rpg_seed.db` **permanece rastreável** (é a fonte da verdade pro Render)
+
+### 📦 Arquivos criados/modificados
+- `~/rpg/rpg_seed.db` (2.2 MB, cópia do banco bom, commitado)
+- `~/rpg/server.py` (patch de seed + paths absolutos)
+- `~/rpg/requirements.txt` (+Pillow)
+- `~/rpg/.gitignore` (+rpg.db)
+
+### 🔑 Commits importantes
+- `2a18ec7` feat: seed do banco no boot
+- `400d16b` chore: rpg.db fora do git
+- `aac24db` fix: adicionar Pillow ao requirements
+
+### ⚠️ Limitações conhecidas do Render Free
+- Cold start de ~50s (hiberna após inatividade)
+- Mudanças do jogador (level, ouro, itens) **somem** quando o Render hiberna/redeploya
+- Solução definitiva seria: disco persistente pago ou PostgreSQL gerenciado
+- Para dev/testes, o seed atual é suficiente
+
+### 📋 Pendências herdadas (para próximas sessões)
+- [ ] Muro "some" em certos ângulos quando player encosta
+- [ ] Slime verde/azul aparecem pequenos (polimento)
+- [ ] Bush_simple1_1.png dá 404 (objeto barril sem sprite)
+- [ ] Sistema de drops de itens
+- [ ] Chat (testar envio)
+- [ ] CSS `.tile` usa 64px mas `TILE_PX=40` (sobreposição leve)
