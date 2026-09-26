@@ -1,5 +1,5 @@
 # REINO SOMBRIO MMORPG — Contexto do Projeto
-Última atualização: 19/09/2026 (tarde)
+Última atualização: 26/09/2026 (noite) — MIGRAÇÃO PHASER CONCLUÍDA
 
 ## 1. O QUE É O PROJETO
 MMORPG 2D online, inspirado no Curse of Aros, feito em Flask + SQLite
@@ -17,7 +17,7 @@ rodando no Termux (Android).
 
 ## 2. STACK TÉCNICA
 - Backend: Python 3.13 + Flask + SQLite (WAL mode)
-- Frontend: HTML + CSS + JavaScript puro
+- Frontend: HTML + CSS + JavaScript puro (index.html antigo) + **Phaser 3** (jogo.html novo)
 - Sprites: LPC (jogador), CraftPix (slimes)
 - Ferramentas: PIL/Pillow
 
@@ -32,7 +32,7 @@ rodando no Termux (Android).
   - Cruz: terra_caminho (6 tiles largura)
 - Gerador: ~/rpg/gerar_mapa_cruz.py
 
-## 4. VARIAVEIS SINCRONIZADAS (CRITICO)
+## 4. VARIAVEIS SINCRONIZADAS (index.html antigo — NÃO usar no Phaser)
 ### server.py:
 W_MAP = 200
 H_MAP = 200
