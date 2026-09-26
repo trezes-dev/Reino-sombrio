@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Teste Phaser</title>
+<style>
+  html, body { margin:0; padding:0; background:#0a0a1a; overflow:hidden; }
+  #jogo canvas { display:block !important; width:100vw !important; height:100vh !important; }
+  #info { position:fixed; top:10px; left:10px; color:#0f0; font-family:monospace; font-size:14px; background:#000; padding:8px; z-index:999; }
+</style>
+<script src="/static/lib/phaser.min.js"></script>
+</head>
+<body>
+<div id="jogo"></div>
+<div id="info">Aguardando...</div>
+<script>
+document.getElementById("info").textContent = "Phaser: " + (typeof Phaser) + " | v" + (typeof Phaser !== "undefined" ? Phaser.VERSION : "?");
+
+try {
+  var game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: 'jogo',
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#2a4a2a',
+    scene: {
+      create: function() {
+        this.add.rectangle(window.innerWidth/2, window.innerHeight/2, 200, 200, 0xff0000);
+        this.add.text(window.innerWidth/2 - 80, window.innerHeight/2 - 20, 'FUNCIONOU!', { fill:'#fff', fontSize:'24px', fontFamily:'monospace' });
+        document.getElementById("info").textContent = "CENA CRIADA! Canvas: " + document.querySelectorAll("canvas").length;
+      }
+    }
+  });
+} catch(e) {
+  document.getElementById("info").textContent = "ERRO: " + e.message;
+}
+
+setTimeout(function() {
+  var cs = document.querySelectorAll("canvas");
+  var txt = "Canvas: " + cs.length;
+  cs.forEach(function(c,i){ txt += " #" + i + " " + c.width + "x" + c.height + " vis=" + (c.offsetWidth + "x" + c.offsetHeight); });
+  document.getElementById("info").textContent += " | " + txt;
+}, 1500);
+</script>
+</body>
+</html>

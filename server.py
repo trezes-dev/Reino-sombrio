@@ -3,6 +3,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3, random, functools, time, json, threading
 
 app = Flask(__name__)
+
+@app.after_request
+def _no_cache_html(resp):
+    ct = resp.headers.get('Content-Type', '')
+    if 'text/html' in ct:
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+    return resp
+
 app.secret_key = "troque-essa-chave-por-algo-aleatorio-grande"
 import os as _os, shutil as _shutil
 _BASE = _os.path.dirname(_os.path.abspath(__file__))
@@ -13,8 +23,9 @@ if (not _os.path.exists(DB) or _os.path.getsize(DB) < 100000) and _os.path.exist
     print("[BOOT] rpg.db restaurado do seed")
 W_MAP = 200
 H_MAP = 200
-VIEW = 41
+VIEW = 51
 METADE = VIEW // 2
+CHUNK = 10
 XP_MONSTRO = {"Goblin": 10, "Lobo": 15, "Esqueleto": 20, "Slime": 8}
 
 CARGOS = {
@@ -234,33 +245,40 @@ def estado(jid):
             "x": o[4], "y": o[5], "hp": o[6], "hp_max": o[7], "nivel": o[8],
             "cor": info_o["cor"], "badge": info_o["badge"]
         })
-    # viewport 15x15
-    metade = VIEW // 2
+    # ancora do chunk - cliente pode forcar via ?ax=&ay=
+    ax_param = request.args.get('ax', type=int)
+    ay_param = request.args.get('ay', type=int)
+    base_x = ax_param if ax_param is not None else x
+    base_y = ay_param if ay_param is not None else y
+    anchor_x = (base_x // CHUNK) * CHUNK + CHUNK // 2
+    anchor_y = (base_y // CHUNK) * CHUNK + CHUNK // 2
+    # viewport centrado na ancora
+    metade = METADE
     vp = []
     for vy in range(VIEW):
         linha_vp = []
         for vx in range(VIEW):
-            mx = x - metade + vx
-            my = y - metade + vy
+            mx = anchor_x - metade + vx
+            my = anchor_y - metade + vy
             linha_vp.append(tile_em(mx, my))
         vp.append(linha_vp)
     # monstros e npcs no viewport
     mons_vp = []
     for m in mons:
-        if abs(m[2] - x) <= metade and abs(m[3] - y) <= metade:
+        if abs(m[2] - anchor_x) <= metade and abs(m[3] - anchor_y) <= metade:
             mons_vp.append(m)
     npcs_vp = []
     for n in npcs:
-        if abs(n[2] - x) <= metade and abs(n[3] - y) <= metade:
+        if abs(n[2] - anchor_x) <= metade and abs(n[3] - anchor_y) <= metade:
             npcs_vp.append(n)
     outros_vp = []
     for o in lista_outros:
-        if abs(o["x"] - x) <= metade and abs(o["y"] - y) <= metade:
+        if abs(o["x"] - anchor_x) <= metade and abs(o["y"] - anchor_y) <= metade:
             outros_vp.append(o)
     return {"id": jid_, "nome": nome_pers or nome_login, "login": nome_login,
             "classe": classe, "cargo": cargo or "player",
             "cargo_nome": info["nome"], "cargo_cor": info["cor"], "cargo_badge": info["badge"],
-            "hp": hp, "ouro": ouro, "x": x, "y": y,
+            "hp": hp, "ouro": ouro, "x": x, "y": y, "anchor_x": anchor_x, "anchor_y": anchor_y,
             "xp": xp, "nivel": nivel, "hp_max": hp_max, "cor": cor,
             "arma": arma, "inv": inv, "monstros": mons_vp, "npcs": npcs_vp, "outros": outros_vp,
             "viewport": vp, "view": VIEW, "metade": metade,
@@ -613,6 +631,14 @@ def api_mapa_completo():
     tiles = {f"{r['x']},{r['y']}": r['tipo'] for r in cursor.fetchall()}
     conn.close()
     return jsonify(tiles)
+
+@app.route("/jogo_teste")
+def jogo_teste_route():
+    return render_template("jogo_teste.html")
+
+@app.route("/jogo")
+def jogo_phaser():
+    return render_template("jogo.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():

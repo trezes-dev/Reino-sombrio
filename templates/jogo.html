@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Reino Sombrio</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#0a0a1a; touch-action:none; font-family:monospace; }
+  #jogo { width:100vw; height:100vh; }
+  #jogo canvas { display:block !important; width:100vw !important; height:100vh !important; }
+
+  #hud {
+    position:fixed; top:8px; left:8px; z-index:100;
+    background:rgba(20,15,30,0.85); border:2px solid #4af6ff;
+    border-radius:6px; padding:6px 10px; color:#4af6ff;
+    font-size:11px; line-height:1.6;
+  }
+  #hud b { color:#fff; }
+
+  #joy {
+    position:fixed; left:20px; bottom:20px; width:120px; height:120px;
+    border-radius:50%; background:rgba(74,246,255,0.15);
+    border:3px solid rgba(74,246,255,0.5); z-index:200;
+    touch-action:none; user-select:none;
+  }
+  #joy-knob {
+    position:absolute; left:50%; top:50%;
+    width:60px; height:60px; margin:-30px 0 0 -30px;
+    border-radius:50%; background:rgba(74,246,255,0.7);
+    border:2px solid #fff; pointer-events:none;
+    box-shadow:0 0 12px rgba(74,246,255,0.8);
+  }
+  #btn-atk {
+    position:fixed; right:20px; bottom:20px; width:70px; height:70px;
+    border-radius:50%; background:rgba(200,50,50,0.85);
+    border:3px solid #ff4444; z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:32px; touch-action:none;
+  }
+  #btn-info {
+    position:fixed; right:110px; bottom:110px; width:60px; height:60px;
+    border-radius:50%; background:rgba(100,80,200,0.85);
+    border:3px solid #a06bff; z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:24px; touch-action:none;
+  }
+</style>
+<script src="/static/lib/phaser.min.js"></script>
+</head>
+<body>
+<div id="jogo"></div>
+<div id="hud">
+  <div><b>Trezes</b> <span style="color:#ffd700">👑</span> Nv 1300</div>
+  <div>HP: <span style="color:#ff6666">2014/2080</span></div>
+</div>
+<div id="joy"><div id="joy-knob"></div></div>
+<div id="btn-atk">⚔️</div>
+<div id="btn-info">📜</div>
+
+<script>
+var player, teclas;
+var joyAtivo = false;
+var ultimaDir = "baixo";
+var atacando = false;
+var joyOrigem = {x:0, y:0};
+var joyDelta = {x:0, y:0};
+
+function preload() {
+  this.load.image('grama', '/static/sprites/terreno/chao/grama_lobby.png');
+  this.load.image('terra', '/static/sprites/terreno/chao/terra_caminho.png');
+  var DIRS = ['baixo','cima','esq','dir'];
+  for (var di = 0; di < DIRS.length; di++) {
+    var d = DIRS[di];
+    this.load.image('idle-' + d + '-0', '/static/sprites/jogador/idle-' + d + '-0.png');
+    this.load.image('idle-' + d + '-1', '/static/sprites/jogador/idle-' + d + '-1.png');
+    for (var i = 0; i < 9; i++) {
+      this.load.image('walk-' + d + '-' + i, '/static/sprites/jogador/walk-' + d + '-' + i + '.png');
+    }
+    for (var j = 0; j < 6; j++) {
+      this.load.image('slash-' + d + '-' + j, '/static/sprites/jogador/slash-' + d + '-' + j + '.png');
+    }
+  }
+}
+
+function create() {
+  var TILE = 64;
+  var LW = 3200, LH = 3200;
+
+  // Chao
+  for (var y = 0; y < LH; y += TILE) {
+    for (var x = 0; x < LW; x += TILE) {
+      this.add.image(x, y, 'grama').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(0);
+    }
+  }
+
+  // Cruz de caminho
+  var cx = LW / 2, cy = LH / 2;
+  for (var x2 = 0; x2 < LW; x2 += TILE) {
+    this.add.image(x2, cy - TILE, 'terra').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(1);
+  }
+  for (var y2 = 0; y2 < LH; y2 += TILE) {
+    this.add.image(cx - TILE, y2, 'terra').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(1);
+  }
+
+  // Cria as animacoes
+  var DIRS = ['baixo','cima','esq','dir'];
+  for (var di = 0; di < DIRS.length; di++) {
+    var d = DIRS[di];
+    // Andar (9 frames)
+    var framesW = [];
+    for (var i = 0; i < 9; i++) framesW.push({ key: 'walk-' + d + '-' + i });
+    this.anims.create({ key: 'andar-' + d, frames: framesW, frameRate: 14, repeat: -1 });
+    // Parado (2 frames lentos)
+    this.anims.create({
+      key: 'parado-' + d,
+      frames: [{ key: 'idle-' + d + '-0' }, { key: 'idle-' + d + '-1' }],
+      frameRate: 2,
+      repeat: -1
+    });
+    // Ataque (6 frames, roda uma vez)
+    var framesA = [];
+    for (var j = 0; j < 6; j++) framesA.push({ key: 'slash-' + d + '-' + j });
+    this.anims.create({ key: 'atacar-' + d, frames: framesA, frameRate: 18, repeat: 0 });
+  }
+
+  // Player
+  player = this.physics.add.sprite(cx, cy, 'idle-baixo-0');
+  player.setDepth(10);
+  player.setScale(1.55);
+  player.setCollideWorldBounds(true);
+
+  this.physics.world.setBounds(0, 0, LW, LH);
+  this.cameras.main.setBounds(0, 0, LW, LH);
+  this.cameras.main.startFollow(player, true, 0.08, 0.08);
+  this.cameras.main.setZoom(0.7);
+
+  // Teclado
+  teclas = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
+
+  // JOYSTICK
+  var joy = document.getElementById('joy');
+  var knob = document.getElementById('joy-knob');
+  var R = 50;
+
+  joy.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    var r = joy.getBoundingClientRect();
+    joyOrigem.x = r.left + r.width / 2;
+    joyOrigem.y = r.top + r.height / 2;
+    joyAtivo = true;
+    atualizarKnob(e.touches[0]);
+  }, { passive: false });
+
+  joy.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!joyAtivo) return;
+    atualizarKnob(e.touches[0]);
+  }, { passive: false });
+
+  joy.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    joyAtivo = false;
+    joyDelta.x = 0; joyDelta.y = 0;
+    knob.style.transform = 'translate(0,0)';
+  }, { passive: false });
+
+  function atualizarKnob(t) {
+    var dx = t.clientX - joyOrigem.x;
+    var dy = t.clientY - joyOrigem.y;
+    var d = Math.hypot(dx, dy);
+    if (d > R) { dx = dx / d * R; dy = dy / d * R; }
+    joyDelta.x = dx / R;
+    joyDelta.y = dy / R;
+    knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+  }
+
+  // Botoes
+  document.getElementById('btn-atk').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (atacando) return;
+    atacando = true;
+    player.anims.play('atacar-' + ultimaDir, true);
+    player.once('animationcomplete', function() {
+      atacando = false;
+      player.anims.play('parado-' + ultimaDir, true);
+    });
+  }, { passive: false });
+
+  document.getElementById('btn-info').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    alert('Pos: ' + Math.round(player.x) + ', ' + Math.round(player.y));
+  }, { passive: false });
+}
+
+function update() {
+  var VEL = 100;
+  var vx = 0, vy = 0;
+
+  if (teclas.LEFT.isDown || teclas.A.isDown) vx -= 1;
+  if (teclas.RIGHT.isDown || teclas.D.isDown) vx += 1;
+  if (teclas.UP.isDown || teclas.W.isDown) vy -= 1;
+  if (teclas.DOWN.isDown || teclas.S.isDown) vy += 1;
+
+  if (joyAtivo && (Math.abs(joyDelta.x) > 0.15 || Math.abs(joyDelta.y) > 0.15)) {
+    vx = joyDelta.x;
+    vy = joyDelta.y;
+  }
+
+  var mag = Math.hypot(vx, vy);
+  if (mag > 1) { vx /= mag; vy /= mag; }
+
+  player.setVelocity(vx * VEL, vy * VEL);
+
+  // Se esta atacando E andando, cancela ataque visual e toca andar
+  var andando = Math.abs(vx) > 0.05 || Math.abs(vy) > 0.05;
+  if (atacando && andando) {
+    atacando = false;
+    player.off('animationcomplete');
+  }
+  if (atacando) return;
+
+  // Detecta direcao
+  if (andando) {
+    var dir;
+    if (Math.abs(vx) > Math.abs(vy)) dir = vx > 0 ? 'dir' : 'esq';
+    else dir = vy > 0 ? 'baixo' : 'cima';
+    ultimaDir = dir;
+    player.anims.play('andar-' + dir, true);
+  } else {
+    // Parado: toca animacao idle
+    if (player.anims.currentAnim === null || player.anims.currentAnim.key !== 'parado-' + ultimaDir) {
+      player.anims.play('parado-' + ultimaDir, true);
+    }
+  }
+}
+
+// Inicia igual ao teste que funcionou
+var game;
+try {
+  game = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: 'jogo',
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#2a4a2a',
+    pixelArt: true,
+    roundPixels: true,
+    antialias: false,
+    physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+    scene: { preload: preload, create: create, update: update }
+  });
+} catch(e) {
+  alert('ERRO: ' + e.message);
+}
+
+// Resize responsivo (landscape <-> portrait)
+window.addEventListener('resize', function() {
+  if (!game) return;
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  game.scale.resize(w, h);
+  if (game.scene && game.scene.scenes[0]) {
+    var sc = game.scene.scenes[0];
+    if (sc.cameras && sc.cameras.main) {
+      sc.cameras.main.setSize(w, h);
+    }
+  }
+});
+
+// Forca resize uma vez apos carregar (alguns WebView nao disparam)
+setTimeout(function(){
+  window.dispatchEvent(new Event('resize'));
+}, 500);
+</script>
+</body>
+</html>

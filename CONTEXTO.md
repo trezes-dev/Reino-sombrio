@@ -409,3 +409,75 @@ ps aux | grep server.py | grep -v grep
 - [ ] Sistema de drops de itens
 - [ ] Chat (testar envio)
 - [ ] CSS `.tile` usa 64px mas `TILE_PX=40` (sobreposição leve)
+
+
+---
+
+## 27. Sessão 26/09/2026 — MIGRAÇÃO PARA PHASER
+
+### 🎯 Motivo da migração
+Os problemas de câmera (teleporte, puxada, NPCs pulando) eram limitações da arquitetura DOM + polling HTTP. Após várias tentativas de fix, decidimos migrar para **Phaser 3** (engine 2D profissional).
+
+### 🚀 Nova arquitetura
+- **Novo arquivo:** `~/rpg/templates/jogo.html` — cliente Phaser
+- **Nova rota:** `GET /jogo` (adicionada em `server.py`)
+- **Rota antiga `/`** continua funcionando (o `index.html` antigo ainda existe, mas está obsoleto)
+- **Phaser local:** `~/rpg/static/lib/phaser.min.js` (1.2 MB)
+
+### ✅ Funcionalidades implementadas no Phaser
+- Câmera suave com `startFollow(player, true, 0.08, 0.08)` — SEM teleporte, SEM puxada
+- Player fixo no centro, mundo desliza ao redor
+- Zoom da câmera: `0.7` (vê bastante terreno, estilo Curse of Aros)
+- Scale do player: `1.55` (7% maior que CoA)
+- Movimento: joystick virtual (touch) + WASD (teclado)
+- Animação de andar (9 frames por direção)
+- Animação de parado/idle (2 frames, frameRate 2)
+- Animação de ataque (6 frames slash, cancela se andar)
+- HUD topo esquerdo (nome, level, HP)
+- Botões: ataque (vermelho) e info (roxo)
+
+### 🎨 Config Phaser que funciona
+type: Phaser.AUTO / parent 'jogo' / width-height = innerWidth-innerHeight /
+backgroundColor '#2a4a2a' / pixelArt true / roundPixels true / antialias false /
+physics: arcade sem gravity.
+
+### ⚠️ LIÇÕES APRENDIDAS
+1. type: Phaser.CANVAS com scale RESIZE quebra - usar Phaser.AUTO
+2. Sem roundPixels: true os sprites ficam com listras (artefato de anti-aliasing)
+3. Zoom fracionario (0.9) piora as listras - usar valor redondo (0.7, 1, 1.5)
+4. Flask cacheia templates em memoria - SEMPRE reiniciar o server apos editar HTML
+5. Nao usar let duplicado no mesmo escopo - da SyntaxError que mata todo o JS
+
+### 📊 Comparação com Curse of Aros (avaliação atual)
+- Câmera/Movimento: 10/10
+- Personagem (tamanho): 10/10
+- Animação: 10/10
+- HUD: 5/10
+- Densidade do mundo: 3/10 (PROXIMO ALVO)
+- Objetos decorativos: 0/10 (PROXIMO ALVO)
+
+### 📋 PRÓXIMOS PASSOS
+1. [URGENTE] Decorar o mundo - arvores, pedras, flores, cogumelos
+2. HUD completo (hotbar 8 slots, barra XP, botoes)
+3. Carregar mapa real (tiles 200x200 do banco em vez do verde infinito)
+4. NPCs (Mercador, Ferreiro, Alquimista) no lobby
+5. Monstros (slimes coloridos) nos biomas
+6. Conexao com o servidor Flask (login, /api/estado, /api/mover)
+7. Colisao com arvores/muros
+
+### 🔧 Como rodar/testar
+Reiniciar servidor: pkill -9 -f server.py && sleep 2 && cd ~/rpg && nohup python3 server.py > ~/srv.log 2>&1 &
+Acessar: http://127.0.0.1:5000/jogo (Phaser NOVO) ou http://127.0.0.1:5000/ (index.html antigo obsoleto)
+Sempre fechar o Chrome COMPLETAMENTE apos editar HTML.
+
+### 📦 Arquivos criados nesta sessão
+- ~/rpg/templates/jogo.html (~6 KB)
+- ~/rpg/static/lib/phaser.min.js (1.2 MB)
+- ~/rpg/templates/jogo_teste.html (teste de diagnostico)
+
+### 📌 Backup feito antes de decorar
+- ~/rpg_BACKUP_PHASER_20260926_1938.tar.gz (projeto todo, 77 MB)
+- ~/rpg/rpg.db.bak_antes_decoracao
+- ~/rpg/rpg_seed.db.bak_antes_decoracao
+- ~/rpg/templates/jogo.html.bak_antes_decoracao
+- ~/rpg/server.py.bak_antes_decoracao
