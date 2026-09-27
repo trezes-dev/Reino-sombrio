@@ -19,3 +19,16 @@ server_antigo.py
 jogo.py
 migrar_ids.py
 rpg.db
+
+# Backups locais (nao versionar)
+*.bak
+*.bak_*
+*.bak2
+*.bak3
+rpg.db.bak*
+rpg_seed.db.bak*
+server.py.bak*
+templates/*.bak*
+static/sprites/arvores_128/
+static/sprites/arvores_ok/
+static/sprites/decoracao/

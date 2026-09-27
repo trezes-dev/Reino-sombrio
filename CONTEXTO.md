@@ -481,3 +481,61 @@ Sempre fechar o Chrome COMPLETAMENTE apos editar HTML.
 - ~/rpg/rpg_seed.db.bak_antes_decoracao
 - ~/rpg/templates/jogo.html.bak_antes_decoracao
 - ~/rpg/server.py.bak_antes_decoracao
+
+
+---
+
+## 28. Sessão 26/09/2026 — Decoração com árvores (Phaser)
+
+### 🎯 Objetivo
+Adicionar árvores espalhadas por bioma pra dar vida ao mundo (estilo Curse of Aros).
+
+### 🛠️ Como as árvores foram extraídas (LPC trees)
+O pack LPC trees NAO tem grid fixo — as árvores têm tamanhos variados (40-250px), empacotadas de forma irregular. Tentar cortar em grid 64 ou 128 dava fragmentos.
+
+Solucao: flood fill (connected components) com numpy.
+- Script detecta cada blob isolado (árvore inteira)
+- Extrai pelo bounding box natural (sem corte)
+- Filtra por tamanho (60-220px altura)
+
+Resultado: 154 arvores inteiras em static/sprites/arvores_final/
+- brown_01.png ate brown_39.png (outono escuro)
+- dead_01.png ate dead_37.png (mortas)
+- green_01.png ate green_39.png (vivas)
+- orange_01.png ate orange_39.png (outono)
+
+### ✅ Implementação no jogo.html (Phaser)
+- Preload: carrega 154 imagens com loop em ARVORES_CARREGAR
+- Distribuicao: grid PASSO=256 com jitter aleatorio (seed fixa 12345)
+- Bioma por quadrante:
+  - Sup Esq -> brown
+  - Sup Dir -> green
+  - Inf Esq -> dead
+  - Inf Dir -> orange
+- Densidade: 40% vazio
+- z-index: setDepth(py) - player anda atras de arvores abaixo dele
+- Scale: 1.0 (tamanho natural do flood fill)
+
+### ⚠️ BUGS QUE TRAVARAM O JOGO (nao repetir)
+1. Path errado travava tudo: arvores_final/arvore_brown_01.png (com prefixo arvore_) -> 404 -> Phaser espera pra sempre -> jogo congela. Path correto: arvores_final/brown_01.png
+2. re.sub com DOTALL comendo pedacos do codigo -> JS quebrado
+3. Backup bak_antes_arvores128 ja estava quebrado (path errado) - reverter pra ele nao resolve
+4. SEMPRE testar com 4 arvores primeiro antes de escalar pra 154
+
+### 📦 Arquivos importantes
+- ~/rpg/static/sprites/lpc/lpc-trees/trees-{green,brown,orange,dead}.png (originais 1024x1024)
+- ~/rpg/static/sprites/arvores_final/*.png (154 arvores extraidas por blob)
+- ~/rpg/templates/jogo.html (patch de decoracao)
+- Backup: ~/rpg_BACKUP_ARVORES_YYYYMMDD_HHMM.tar.gz
+
+### 🛠️ Script de extracao (guardar pra referencia)
+Requer numpy (pkg install python-numpy)
+Flood fill 8-direcional em cima de alpha > 30
+Filtra blobs com altura 60-220px, largura 50-250px
+Salva como {cor}_{numero:03d}.png
+
+### 📋 Pendencias (melhorias visuais)
+- [ ] Arvores cortadas por sobreposicao (2 muito proximas)
+- [ ] Adicionar pedras, flores, cogumelos
+- [ ] Colisao com arvores (nao atravessar)
+- [ ] Variacao de tiles (grama clara/escura misturada)

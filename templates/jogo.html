@@ -68,6 +68,21 @@ var joyDelta = {x:0, y:0};
 function preload() {
   this.load.image('grama', '/static/sprites/terreno/chao/grama_lobby.png');
   this.load.image('terra', '/static/sprites/terreno/chao/terra_caminho.png');
+  // ARVORES - 5 por cor (20 no total)
+var ARVORES_CARREGAR = {
+    brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
+    dead:   ['dead_01','dead_02','dead_03','dead_04','dead_05','dead_06','dead_07','dead_08','dead_09','dead_10','dead_11','dead_12','dead_13','dead_14','dead_15','dead_16','dead_17','dead_18','dead_19','dead_20','dead_21','dead_22','dead_23','dead_24','dead_25','dead_26','dead_27','dead_28','dead_29','dead_30','dead_31','dead_32','dead_33','dead_34','dead_35','dead_36','dead_37'],
+    green:  ['green_01','green_02','green_03','green_04','green_05','green_06','green_07','green_08','green_09','green_10','green_11','green_12','green_13','green_14','green_15','green_16','green_17','green_18','green_19','green_20','green_21','green_22','green_23','green_24','green_25','green_26','green_27','green_28','green_29','green_30','green_31','green_32','green_33','green_34','green_35','green_36','green_37','green_38','green_39'],
+    orange: ['orange_01','orange_02','orange_03','orange_04','orange_05','orange_06','orange_07','orange_08','orange_09','orange_10','orange_11','orange_12','orange_13','orange_14','orange_15','orange_16','orange_17','orange_18','orange_19','orange_20','orange_21','orange_22','orange_23','orange_24','orange_25','orange_26','orange_27','orange_28','orange_29','orange_30','orange_31','orange_32','orange_33','orange_34','orange_35','orange_36','orange_37','orange_38','orange_39']
+  };
+  for (var cor in ARVORES_CARREGAR) {
+    var lista = ARVORES_CARREGAR[cor];
+    for (var ii = 0; ii < lista.length; ii++) {
+      var nome = lista[ii];
+      this.load.image('tree-' + nome, '/static/sprites/arvores_final/' + nome + '.png');
+    }
+  }
+
   var DIRS = ['baixo','cima','esq','dir'];
   for (var di = 0; di < DIRS.length; di++) {
     var d = DIRS[di];
@@ -133,6 +148,50 @@ function create() {
   this.cameras.main.setBounds(0, 0, LW, LH);
   this.cameras.main.startFollow(player, true, 0.08, 0.08);
   this.cameras.main.setZoom(0.7);
+
+  // ===== DISTRIBUICAO DE ARVORES =====
+var ARVORES_CARREGAR = {
+    brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
+    dead:   ['dead_01','dead_02','dead_03','dead_04','dead_05','dead_06','dead_07','dead_08','dead_09','dead_10','dead_11','dead_12','dead_13','dead_14','dead_15','dead_16','dead_17','dead_18','dead_19','dead_20','dead_21','dead_22','dead_23','dead_24','dead_25','dead_26','dead_27','dead_28','dead_29','dead_30','dead_31','dead_32','dead_33','dead_34','dead_35','dead_36','dead_37'],
+    green:  ['green_01','green_02','green_03','green_04','green_05','green_06','green_07','green_08','green_09','green_10','green_11','green_12','green_13','green_14','green_15','green_16','green_17','green_18','green_19','green_20','green_21','green_22','green_23','green_24','green_25','green_26','green_27','green_28','green_29','green_30','green_31','green_32','green_33','green_34','green_35','green_36','green_37','green_38','green_39'],
+    orange: ['orange_01','orange_02','orange_03','orange_04','orange_05','orange_06','orange_07','orange_08','orange_09','orange_10','orange_11','orange_12','orange_13','orange_14','orange_15','orange_16','orange_17','orange_18','orange_19','orange_20','orange_21','orange_22','orange_23','orange_24','orange_25','orange_26','orange_27','orange_28','orange_29','orange_30','orange_31','orange_32','orange_33','orange_34','orange_35','orange_36','orange_37','orange_38','orange_39']
+  };
+
+  // Seed fixa
+  var seed = 12345;
+  function rand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
+  function biomaEm(x, y) {
+    var mx = LW / 2, my = LH / 2;
+    if (x < mx && y < my) return 'brown';
+    if (x >= mx && y < my) return 'green';
+    if (x < mx && y >= my) return 'dead';
+    return 'orange';
+  }
+
+  var PASSO = 256;
+  var contadorArv = 0;
+  for (var ty = 0; ty < LH; ty += PASSO) {
+    for (var tx = 0; tx < LW; tx += PASSO) {
+      var px = tx + rand() * PASSO;
+      var py = ty + rand() * PASSO;
+      // 60% vazio
+      if (rand() < 0.4) continue;
+      var bioma = biomaEm(px, py);
+      var lista = ARVORES_CARREGAR[bioma];
+      var arq = lista[Math.floor(rand() * lista.length)];
+      var key = 'tree-' + arq;
+      var arv = this.add.image(px, py, key);
+      arv.setOrigin(0.5, 1);
+      arv.setScale(1);
+      arv.setDepth(py);
+      contadorArv++;
+    }
+  }
+  console.log('[DECOR] ' + contadorArv + ' arvores colocadas');
 
   // Teclado
   teclas = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
