@@ -650,3 +650,63 @@ Aumentar o reino pra caber cidade completa (50-100 players). Antes de construir,
 
 ### 🔑 Commit
 - (pendente) checkpoint: reino vazio 90x90
+
+
+---
+
+## 31. Sessao 27/09/2026 (tarde) - Primeiras adicoes no reino
+
+### 🎯 Objetivo
+Popular o reino com itens de decoracao + NPCs usando coordenadas exatas (1 por 1).
+
+### ✅ O que foi feito
+- 154 arvores renomeadas de `brown_XX/green_XX/dead_XX/orange_XX` para `arvore_001` a `arvore_154`
+- Movidas para `~/rpg/static/sprites/arvores/`
+- Arvores aleatorias so FORA do reino (dev adiciona manualmente dentro)
+- Banco de itens em `~/rpg/static/sprites/itens/`:
+  - carroca_mercador.png (125x170)
+  - mesa1.png (62x44)
+  - banquinho_horizontal.png
+  - banquinho.png
+  - banquao.png
+- 194 sprites extraidos do medieval em `~/rpg/static/sprites/banco_medieval/` (sp000 a sp193)
+- Biblioteca visual em 13 paginas (`_biblio_pag1.png` a `_biblio_pag13.png`)
+
+### 🏰 Adicoes no reino (deco_manual)
+
+### 📐 Estrutura do deco_manual (no jogo.html)
+- Localizado depois de `console.log('[REINO] muros criados');`
+- Formato: `[chave, tile_x, tile_y, scale]`
+- **IMPORTANTE:** arvores usam chave com prefixo `tree-` (ex: `tree-arvore_113`)
+- NPCs usam chave com prefixo `npc_` (ex: `npc_mercador`)
+- Itens do banco usam nome direto (ex: `mesa1`, `carroca_mercador`)
+
+### 🛠️ HUD de coordenadas
+- Canto inferior esquerdo
+- Mostra `Tile: X, Y` em tempo real
+- Atualiza pelo `window._hudAtualizar()`
+
+### ⚠️ LIÇÕES APRENDIDAS
+1. **NUNCA usar `sed` com espacos dentro do padrao** — falha silenciosamente, use Python com assert
+2. **Sempre usar prefixo `tree-`** nas arvores do deco_manual (senao Phaser nao acha)
+3. **Arvores aleatorias SO fora do reino** (o dev quer controle manual dentro)
+4. **Codigo de "NAO colocar arvore dentro do reino"** usa `REINO_X, REINO_Y, REINO_W, REINO_H`
+5. **Sempre verificar com `grep`** o que o patch realmente aplicou
+
+### 🔑 Commits
+- a643f07: banco de itens (5 nomeados) + 194 sprites medieval
+- (pendente) feat: arvores renomeadas + primeiras adicoes
+
+### 📋 Pendencias
+- [ ] Nomear mais sprites do banco_medieval (tocha, fogueira, poco, estatua, etc)
+- [ ] Adicionar fonte no centro do reino
+- [ ] Adicionar mais arvores verdes (coordenadas com o dev)
+- [ ] Adicionar 2 NPCs faltantes (ferreiro, alquimista)
+- [ ] Adicionar tochas/fogueiras nos cantos
+- [ ] Colocar o "chao de pedra" apenas nos caminhos (atualmente e quadrado)
+
+### 📦 Backups dessa sessao
+- ~/rpg/templates/jogo.html.bak_27set_fim
+- ~/rpg/rpg.db.bak_27set_fim
+- ~/rpg/templates/jogo.html.bak_antes_renomear_arvores
+- ~/rpg/static/sprites/arvores_final_BACKUP/ (backup das arvores antes de renomear)
