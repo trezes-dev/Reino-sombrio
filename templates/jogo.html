@@ -95,16 +95,13 @@ function preload() {
   this.load.image('tocha', '/static/sprites/decoracao_extraida/tocha.png');
   // ARVORES - 5 por cor (20 no total)
 var ARVORES_CARREGAR = {
-    brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
-    dead:   ['dead_01','dead_02','dead_03','dead_04','dead_05','dead_06','dead_07','dead_08','dead_09','dead_10','dead_11','dead_12','dead_13','dead_14','dead_15','dead_16','dead_17','dead_18','dead_19','dead_20','dead_21','dead_22','dead_23','dead_24','dead_25','dead_26','dead_27','dead_28','dead_29','dead_30','dead_31','dead_32','dead_33','dead_34','dead_35','dead_36','dead_37'],
-    green:  ['green_01','green_02','green_03','green_04','green_05','green_06','green_07','green_08','green_09','green_10','green_11','green_12','green_13','green_14','green_15','green_16','green_17','green_18','green_19','green_20','green_21','green_22','green_23','green_24','green_25','green_26','green_27','green_28','green_29','green_30','green_31','green_32','green_33','green_34','green_35','green_36','green_37','green_38','green_39'],
-    orange: ['orange_01','orange_02','orange_03','orange_04','orange_05','orange_06','orange_07','orange_08','orange_09','orange_10','orange_11','orange_12','orange_13','orange_14','orange_15','orange_16','orange_17','orange_18','orange_19','orange_20','orange_21','orange_22','orange_23','orange_24','orange_25','orange_26','orange_27','orange_28','orange_29','orange_30','orange_31','orange_32','orange_33','orange_34','orange_35','orange_36','orange_37','orange_38','orange_39']
+    todas: ['arvore_001','arvore_002','arvore_003','arvore_004','arvore_005','arvore_006','arvore_007','arvore_008','arvore_009','arvore_010','arvore_011','arvore_012','arvore_013','arvore_014','arvore_015','arvore_016','arvore_017','arvore_018','arvore_019','arvore_020','arvore_021','arvore_022','arvore_023','arvore_024','arvore_025','arvore_026','arvore_027','arvore_028','arvore_029','arvore_030','arvore_031','arvore_032','arvore_033','arvore_034','arvore_035','arvore_036','arvore_037','arvore_038','arvore_039','arvore_040','arvore_041','arvore_042','arvore_043','arvore_044','arvore_045','arvore_046','arvore_047','arvore_048','arvore_049','arvore_050','arvore_051','arvore_052','arvore_053','arvore_054','arvore_055','arvore_056','arvore_057','arvore_058','arvore_059','arvore_060','arvore_061','arvore_062','arvore_063','arvore_064','arvore_065','arvore_066','arvore_067','arvore_068','arvore_069','arvore_070','arvore_071','arvore_072','arvore_073','arvore_074','arvore_075','arvore_076','arvore_077','arvore_078','arvore_079','arvore_080','arvore_081','arvore_082','arvore_083','arvore_084','arvore_085','arvore_086','arvore_087','arvore_088','arvore_089','arvore_090','arvore_091','arvore_092','arvore_093','arvore_094','arvore_095','arvore_096','arvore_097','arvore_098','arvore_099','arvore_100','arvore_101','arvore_102','arvore_103','arvore_104','arvore_105','arvore_106','arvore_107','arvore_108','arvore_109','arvore_110','arvore_111','arvore_112','arvore_113','arvore_114','arvore_115','arvore_116','arvore_117','arvore_118','arvore_119','arvore_120','arvore_121','arvore_122','arvore_123','arvore_124','arvore_125','arvore_126','arvore_127','arvore_128','arvore_129','arvore_130','arvore_131','arvore_132','arvore_133','arvore_134','arvore_135','arvore_136','arvore_137','arvore_138','arvore_139','arvore_140','arvore_141','arvore_142','arvore_143','arvore_144','arvore_145','arvore_146','arvore_147','arvore_148','arvore_149','arvore_150','arvore_151','arvore_152','arvore_153','arvore_154']
   };
   for (var cor in ARVORES_CARREGAR) {
     var lista = ARVORES_CARREGAR[cor];
     for (var ii = 0; ii < lista.length; ii++) {
       var nome = lista[ii];
-      this.load.image('tree-' + nome, '/static/sprites/arvores_final/' + nome + '.png');
+      this.load.image('tree-' + nome, '/static/sprites/arvores/' + nome + '.png');
     }
   }
 
@@ -297,10 +294,7 @@ function create() {
 
   // ===== DISTRIBUICAO DE ARVORES =====
 var ARVORES_CARREGAR = {
-    brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
-    dead:   ['dead_01','dead_02','dead_03','dead_04','dead_05','dead_06','dead_07','dead_08','dead_09','dead_10','dead_11','dead_12','dead_13','dead_14','dead_15','dead_16','dead_17','dead_18','dead_19','dead_20','dead_21','dead_22','dead_23','dead_24','dead_25','dead_26','dead_27','dead_28','dead_29','dead_30','dead_31','dead_32','dead_33','dead_34','dead_35','dead_36','dead_37'],
-    green:  ['green_01','green_02','green_03','green_04','green_05','green_06','green_07','green_08','green_09','green_10','green_11','green_12','green_13','green_14','green_15','green_16','green_17','green_18','green_19','green_20','green_21','green_22','green_23','green_24','green_25','green_26','green_27','green_28','green_29','green_30','green_31','green_32','green_33','green_34','green_35','green_36','green_37','green_38','green_39'],
-    orange: ['orange_01','orange_02','orange_03','orange_04','orange_05','orange_06','orange_07','orange_08','orange_09','orange_10','orange_11','orange_12','orange_13','orange_14','orange_15','orange_16','orange_17','orange_18','orange_19','orange_20','orange_21','orange_22','orange_23','orange_24','orange_25','orange_26','orange_27','orange_28','orange_29','orange_30','orange_31','orange_32','orange_33','orange_34','orange_35','orange_36','orange_37','orange_38','orange_39']
+    todas: ['arvore_001','arvore_002','arvore_003','arvore_004','arvore_005','arvore_006','arvore_007','arvore_008','arvore_009','arvore_010','arvore_011','arvore_012','arvore_013','arvore_014','arvore_015','arvore_016','arvore_017','arvore_018','arvore_019','arvore_020','arvore_021','arvore_022','arvore_023','arvore_024','arvore_025','arvore_026','arvore_027','arvore_028','arvore_029','arvore_030','arvore_031','arvore_032','arvore_033','arvore_034','arvore_035','arvore_036','arvore_037','arvore_038','arvore_039','arvore_040','arvore_041','arvore_042','arvore_043','arvore_044','arvore_045','arvore_046','arvore_047','arvore_048','arvore_049','arvore_050','arvore_051','arvore_052','arvore_053','arvore_054','arvore_055','arvore_056','arvore_057','arvore_058','arvore_059','arvore_060','arvore_061','arvore_062','arvore_063','arvore_064','arvore_065','arvore_066','arvore_067','arvore_068','arvore_069','arvore_070','arvore_071','arvore_072','arvore_073','arvore_074','arvore_075','arvore_076','arvore_077','arvore_078','arvore_079','arvore_080','arvore_081','arvore_082','arvore_083','arvore_084','arvore_085','arvore_086','arvore_087','arvore_088','arvore_089','arvore_090','arvore_091','arvore_092','arvore_093','arvore_094','arvore_095','arvore_096','arvore_097','arvore_098','arvore_099','arvore_100','arvore_101','arvore_102','arvore_103','arvore_104','arvore_105','arvore_106','arvore_107','arvore_108','arvore_109','arvore_110','arvore_111','arvore_112','arvore_113','arvore_114','arvore_115','arvore_116','arvore_117','arvore_118','arvore_119','arvore_120','arvore_121','arvore_122','arvore_123','arvore_124','arvore_125','arvore_126','arvore_127','arvore_128','arvore_129','arvore_130','arvore_131','arvore_132','arvore_133','arvore_134','arvore_135','arvore_136','arvore_137','arvore_138','arvore_139','arvore_140','arvore_141','arvore_142','arvore_143','arvore_144','arvore_145','arvore_146','arvore_147','arvore_148','arvore_149','arvore_150','arvore_151','arvore_152','arvore_153','arvore_154']
   };
 
   // Seed fixa
@@ -310,12 +304,21 @@ var ARVORES_CARREGAR = {
     return seed / 233280;
   }
 
-  function biomaEm(x, y) {
+  // Retorna uma lista aleatoria baseada no quadrante
+  function biomasDoQuadrante(x, y) {
     var mx = LW / 2, my = LH / 2;
-    if (x < mx && y < my) return 'brown';
-    if (x >= mx && y < my) return 'green';
-    if (x < mx && y >= my) return 'dead';
-    return 'orange';
+    // Gera lista de nomes de arvores por quadrante
+    var lista = [];
+    var inicio, fim;
+    if (x < mx && y < my) { inicio = 1; fim = 39; }       // Sup Esq: brown (outono)
+    else if (x >= mx && y < my) { inicio = 77; fim = 115; } // Sup Dir: green (viva)
+    else if (x < mx && y >= my) { inicio = 40; fim = 76; }  // Inf Esq: dead (morta)
+    else { inicio = 116; fim = 154; }                        // Inf Dir: orange (vermelho)
+    
+    for (var k = inicio; k <= fim; k++) {
+      lista.push('arvore_' + (k < 100 ? '0' + (k < 10 ? '0' : '') + k : k));
+    }
+    return lista;
   }
 
   var PASSO = 256;
@@ -342,8 +345,16 @@ var ARVORES_CARREGAR = {
       if (px < MARGEM_BORDA || px > LW - MARGEM_BORDA) continue;
       if (py < MARGEM_BORDA || py > LH - MARGEM_BORDA) continue;
 
+      // NAO colocar arvore dentro do reino (o dev adiciona manualmente)
+      var tile_x = Math.floor(px / TILE);
+      var tile_y = Math.floor(py / TILE);
+      if (tile_x >= REINO_X - 2 && tile_x <= REINO_X + REINO_W + 2 &&
+          tile_y >= REINO_Y - 2 && tile_y <= REINO_Y + REINO_H + 2) {
+        continue;
+      }
+
       // Vazio (40%)
-      if (true) continue;  // ARVORES DESATIVADAS TEMPORARIAMENTE
+      if (rand() < 0.4) continue;
 
       // Distancia minima entre arvores
       if (muitoPerto(px, py)) continue;
@@ -356,8 +367,7 @@ var ARVORES_CARREGAR = {
       var no_caminho_v = (px > cx3 - TAM_CAMINHO && px < cx3 + TAM_CAMINHO);
       if (no_caminho_h || no_caminho_v) continue;
 
-      var bioma = biomaEm(px, py);
-      var lista = ARVORES_CARREGAR[bioma];
+      var lista = biomasDoQuadrante(px, py);
       var arq = lista[Math.floor(rand() * lista.length)];
       var key = 'tree-' + arq;
       var arv = this.add.image(px, py, key);
