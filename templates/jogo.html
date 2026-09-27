@@ -72,6 +72,27 @@ function preload() {
   this.load.image('muro_frente', '/static/sprites/lobby/muros/muro_frente.png');
   this.load.image('muro_lateral', '/static/sprites/lobby/muros/muro_lateral.png');
   this.load.image('portao', '/static/sprites/lobby/muros/portao.png');
+  // Decoracao manual
+  // Banco de itens (nomes definitivos)
+  this.load.image('carroca_mercador', '/static/sprites/itens/carroca_mercador.png');
+  this.load.image('mesa1', '/static/sprites/itens/mesa1.png');
+  this.load.image('banquinho_horizontal', '/static/sprites/itens/banquinho_horizontal.png');
+  this.load.image('banquinho', '/static/sprites/itens/banquinho.png');
+  this.load.image('banquao', '/static/sprites/itens/banquao.png');
+  this.load.image('fogueira_apagada', '/static/sprites/deco_extraida/fogueira_apagada.png');
+  // ===== DECORACAO =====
+  this.load.image('fonte_real', '/static/sprites/deco_extraida/fonte_01.png');
+  this.load.image('fogueira', '/static/sprites/deco_extraida/fogueira_02.png');
+  this.load.image('tocha', '/static/sprites/deco_extraida/tocha_02.png');
+  this.load.image('banco', '/static/sprites/deco_extraida/banco_02.png');
+  this.load.image('carroca', '/static/sprites/deco_extraida/carroca_01.png');
+  this.load.image('alvo', '/static/sprites/deco_extraida/alvo_02.png');
+  this.load.image('poco', '/static/sprites/deco_extraida/poco_01.png');
+  this.load.image('estatua', '/static/sprites/deco_extraida/estatua_02.png');
+  this.load.image('lanterna', '/static/sprites/deco_extraida/lanterna_03.png');
+  // Decoração (extraída do deco-medieval)
+  this.load.image('poco', '/static/sprites/decoracao_extraida/poco.png');
+  this.load.image('tocha', '/static/sprites/decoracao_extraida/tocha.png');
   // ARVORES - 5 por cor (20 no total)
 var ARVORES_CARREGAR = {
     brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
@@ -143,10 +164,7 @@ function create() {
   // Fonte central
   var cx_px = (REINO_X + REINO_W / 2) * TILE;
   var cy_px = (REINO_Y + REINO_H / 2) * TILE;
-  var fonte_borda = this.add.circle(cx_px, cy_px, TILE * 2.8, 0x2a6090);
-  fonte_borda.setDepth(1);
-  var fonte = this.add.circle(cx_px, cy_px, TILE * 2.5, 0x4aa0ff);
-  fonte.setDepth(1.5);
+  // Fonte real (sprite)
   console.log('[REINO] chao + fonte criados em ' + REINO_X + ',' + REINO_Y);
 
   // ===== MUROS DO REINO =====
@@ -198,9 +216,52 @@ function create() {
   }
 
   console.log('[REINO] muros criados');
-  // PREDIOS e CASAS: sera adicionado 1 a 1 manualmente
 
+  // ===== DECORACAO MANUAL (voce define aqui) =====
+  // Formato: [sprite, tile_x, tile_y, scale]
+  var deco_manual = [
+    ['carroca_mercador', 65, 44, 1.5],
+    // Conjunto de mesa (mesa central + 2 laterais + 2 atras/frente)
+    ['mesa1', 63, 50, 2.5],
+    ['banquinho_horizontal', 61.5, 50, 2],
+    ['banquinho_horizontal', 64.5, 50, 2],
+    ['banquinho', 63, 49, 2],
+    ['banquinho', 63, 51, 2],
+  ];
+  
+  for (var di = 0; di < deco_manual.length; di++) {
+    var item = deco_manual[di];
+    var d_sprite = item[0];
+    var d_tx = item[1];
+    var d_ty = item[2];
+    var d_scale = item[3];
+    var d_px = d_tx * TILE + TILE / 2;
+    var d_py = d_ty * TILE + TILE / 2;
+    var d_obj = this.add.image(d_px, d_py, d_sprite);
+    d_obj.setDepth(d_py);
+    d_obj.setScale(d_scale);
+  }
+  console.log('[REINO] ' + deco_manual.length + ' itens manuais');
 
+  // HUD DE COORDENADAS (canto inferior esquerdo)
+  var hudCoord = document.createElement('div');
+  hudCoord.id = 'hud-coord';
+  hudCoord.style.cssText = 'position:fixed;bottom:180px;left:8px;z-index:999;background:rgba(0,0,0,0.8);color:#00ff88;font-family:monospace;font-size:12px;padding:6px 10px;border:2px solid #00ff88;border-radius:6px;pointer-events:none;line-height:1.5';
+  hudCoord.textContent = 'Tile: ?, ?';
+  document.body.appendChild(hudCoord);
+  
+  window._hudAtualizar = function() {
+    // player eh global no escopo do script
+    if (typeof player !== 'undefined' && player) {
+      var tx = Math.floor(player.x / 64);
+      var ty = Math.floor(player.y / 64);
+      hudCoord.textContent = 'Tile: ' + tx + ', ' + ty;
+    }
+  };
+  console.log('[HUD] coordenadas ativadas');
+
+  // ===== DECORACAO: sera adicionada uma por uma =====
+  // (usar coordenadas definidas pelo dev)
 
   // Cria as animacoes
   var DIRS = ['baixo','cima','esq','dir'];
@@ -232,7 +293,7 @@ function create() {
   this.physics.world.setBounds(0, 0, LW, LH);
   this.cameras.main.setBounds(0, 0, LW, LH);
   this.cameras.main.startFollow(player, true, 0.08, 0.08);
-  this.cameras.main.setZoom(0.22);
+  this.cameras.main.setZoom(0.7);
 
   // ===== DISTRIBUICAO DE ARVORES =====
 var ARVORES_CARREGAR = {
@@ -385,6 +446,9 @@ function update() {
   if (mag > 1) { vx /= mag; vy /= mag; }
 
   player.setVelocity(vx * VEL, vy * VEL);
+  
+  // Atualiza HUD
+  if (window._hudAtualizar) window._hudAtualizar();
 
   // Se esta atacando E andando, cancela ataque visual e toca andar
   var andando = Math.abs(vx) > 0.05 || Math.abs(vy) > 0.05;
