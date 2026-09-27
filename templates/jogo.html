@@ -199,6 +199,136 @@ function create() {
 
   console.log('[REINO] muros criados');
 
+  // ===== PREDIOS DO REINO (retangulos placeholder) =====
+  // Formato: [x_tile, y_tile, largura_tiles, altura_tiles, cor_parede, cor_telhado, nome]
+  var PREDIOS = [
+    // Quadrante NO
+    [14, 14, 10, 7, 0x7090d0, 0x4060a0, 'prefeitura'],
+    [14, 23,  8, 5, 0xb080d0, 0x705090, 'alquimista'],
+    // Quadrante NE
+    [40, 14, 10, 6, 0xa07050, 0x704030, 'ferreiro'],
+    [40, 22,  8, 5, 0x7090c0, 0x406090, 'banco'],
+    // Quadrante SE
+    [40, 37,  9, 5, 0xb080c0, 0x705090, 'mercador'],
+    [40, 44,  8, 6, 0xd0a070, 0x906040, 'estalagem'],
+    // Quadrante SO
+    [14, 37, 10, 5, 0xc06060, 0x903030, 'pvp'],
+    [14, 44,  8, 6, 0x9070c0, 0x604090, 'capela'],
+  ];
+
+  for (var pi = 0; pi < PREDIOS.length; pi++) {
+    var pr = PREDIOS[pi];
+    var px_tile = pr[0];
+    var py_tile = pr[1];
+    var pw_tile = pr[2];
+    var ph_tile = pr[3];
+    var cor_parede = pr[4];
+    var cor_telhado = pr[5];
+
+    // Converte pra pixels
+    var px_px = px_tile * TILE;
+    var py_px = py_tile * TILE;
+    var pw_px = pw_tile * TILE;
+    var ph_px = ph_tile * TILE;
+
+    // Telhado (30% em cima)
+    var telhado = this.add.rectangle(
+      px_px + pw_px / 2,
+      py_px + ph_px * 0.15,
+      pw_px,
+      ph_px * 0.3,
+      cor_telhado
+    );
+    telhado.setDepth(py_px + ph_px * 0.15);
+
+    // Parede (70% embaixo)
+    var parede = this.add.rectangle(
+      px_px + pw_px / 2,
+      py_px + ph_px * 0.65,
+      pw_px,
+      ph_px * 0.7,
+      cor_parede
+    );
+    parede.setDepth(py_px + ph_px * 0.65);
+  }
+
+  console.log('[REINO] ' + PREDIOS.length + ' predios criados');
+
+  // ===== CASAS DO REINO (20 casas pequenas) =====
+  // Formato: [x_tile, y_tile, w_tile, h_tile, cor_parede, cor_telhado]
+  var CASAS = [
+    // NO - entre prefeitura e cruz
+    [24, 14, 3, 3, 0xd09080, 0x905040],
+    [24, 19, 3, 3, 0x80b0d0, 0x407090],
+    [24, 24, 3, 3, 0xc0a070, 0x806030],
+
+    // NE - entre ferreiro e cruz
+    [36, 14, 3, 3, 0xd09080, 0x905040],
+    [36, 19, 3, 3, 0xa0d080, 0x608040],
+    [36, 24, 3, 3, 0xc0a070, 0x806030],
+
+    // SO - entre pvp e cruz
+    [24, 37, 3, 3, 0x80b0d0, 0x407090],
+    [24, 42, 3, 3, 0xd09080, 0x905040],
+    [24, 47, 3, 3, 0xc0a070, 0x806030],
+
+    // SE - entre mercador e cruz
+    [36, 37, 3, 3, 0xa0d080, 0x608040],
+    [36, 42, 3, 3, 0x80b0d0, 0x407090],
+    [36, 47, 3, 3, 0xd09080, 0x905040],
+
+    // Topo (faixa entre cruz e muro N)
+    [18, 11, 3, 2, 0xd09080, 0x905040],
+    [28, 11, 3, 2, 0x80b0d0, 0x407090],
+    [34, 11, 3, 2, 0xa0d080, 0x608040],
+
+    // Fundo (faixa entre cruz e muro S)
+    [18, 51, 3, 2, 0xc0a070, 0x806030],
+    [28, 51, 3, 2, 0xd09080, 0x905040],
+    [34, 51, 3, 2, 0x80b0d0, 0x407090],
+
+    // Lateral (perto dos muros laterais)
+    [48, 30, 3, 2, 0xa0d080, 0x608040],
+    [13, 30, 3, 2, 0xd09080, 0x905040],
+  ];
+
+  for (var ci = 0; ci < CASAS.length; ci++) {
+    var cs = CASAS[ci];
+    var cx_tile = cs[0];
+    var cy_tile = cs[1];
+    var cw_tile = cs[2];
+    var ch_tile = cs[3];
+    var c_cor_parede = cs[4];
+    var c_cor_telhado = cs[5];
+
+    var cx_px = cx_tile * TILE;
+    var cy_px = cy_tile * TILE;
+    var cw_px = cw_tile * TILE;
+    var ch_px = ch_tile * TILE;
+
+    // Telhado (40% em cima - casas tem telhado maior que predios)
+    var c_telhado = this.add.rectangle(
+      cx_px + cw_px / 2,
+      cy_px + ch_px * 0.2,
+      cw_px,
+      ch_px * 0.4,
+      c_cor_telhado
+    );
+    c_telhado.setDepth(cy_px + ch_px * 0.2);
+
+    // Parede (60% embaixo)
+    var c_parede = this.add.rectangle(
+      cx_px + cw_px / 2,
+      cy_px + ch_px * 0.7,
+      cw_px,
+      ch_px * 0.6,
+      c_cor_parede
+    );
+    c_parede.setDepth(cy_px + ch_px * 0.7);
+  }
+
+  console.log('[REINO] ' + CASAS.length + ' casas criadas');
+
   // Cria as animacoes
   var DIRS = ['baixo','cima','esq','dir'];
   for (var di = 0; di < DIRS.length; di++) {
