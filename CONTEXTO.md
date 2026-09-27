@@ -602,3 +602,51 @@ Criar um reino no centro do mundo com muros, portões, prédios e casas (estilo 
 - Sprites LPC de "cerca" são spritesheets grandes — não dá pra usar direto como tile
 - Sempre testar zoom novo: 0.7 era perto, 0.32 é o ideal pro reino
 - Retângulos puros funcionam bem pra validar layout antes de sprites reais
+
+
+---
+
+## 30. Sessão 27/09/2026 (manhã) — Reino vazio 90x90
+
+### 🎯 Objetivo
+Aumentar o reino pra caber cidade completa (50-100 players). Antes de construir, salvar estado limpo.
+
+### 📐 Dimensões finais
+- **Mapa:** 7232px (113 tiles)
+- **Reino:** 90×90 tiles (5760px)
+- **REINO_X = 11, REINO_Y = 11, REINO_W = 90, REINO_H = 90**
+- **Centro (fonte):** tile 56
+- **Portões:** tiles 53-59 (N/S/L/O)
+- **Zoom:** 0.22
+
+### ✅ O que tem no reino (estado atual)
+- 4 muros externos com 4 portões
+- Fonte central (círculo azul placeholder)
+- Cruz de pedra ligando os portões
+- **ZERO prédios, ZERO casas** (vamos adicionar manualmente)
+
+### ⚠️ LIÇÕES APRENDIDAS (importante!)
+1. **NÃO usar geração automática de casas** — ficou horrível (fileiras, sobreposição)
+2. **NÃO usar regex com DOTALL** pra substituir blocos grandes — come código demais
+3. **NÃO tentar adicionar 20 casas de uma vez** — testar 1 por vez
+4. **Sempre usar sprites reais dos packs LPC** em vez de retângulos coloridos
+
+### 🎨 Packs LPC disponíveis (para usar)
+- `~/rpg/static/sprites/lpc/lpc-walls/walls.png` (566KB) — paredes/telhados
+- `~/rpg/static/sprites/lpc/lpc-tavern/` — móveis de taverna, pisos
+- `~/rpg/static/sprites/lpc/lpc-farm/barn.png` — celeiro
+- `~/rpg/static/sprites/lpc/decoration_medieval/decorations-medieval.png` (151KB) — bancos, barris, tochas
+
+### 🔍 Próximo passo
+1. Gerar preview dos spritesheets LPC
+2. Escolher sprites de casa/prédio
+3. Extrair sprites via Pillow
+4. Adicionar 1 por 1 (não automático)
+
+### 📦 Backups
+- `~/rpg/templates/jogo.html.bak_reino_vazio` (estado atual)
+- `~/rpg/rpg.db.bak_reino_vazio`
+- `~/rpg/templates/jogo.html.bak_limpo_sem_casas`
+
+### 🔑 Commit
+- (pendente) checkpoint: reino vazio 90x90
