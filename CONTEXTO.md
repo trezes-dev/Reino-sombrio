@@ -539,3 +539,66 @@ Salva como {cor}_{numero:03d}.png
 - [ ] Adicionar pedras, flores, cogumelos
 - [ ] Colisao com arvores (nao atravessar)
 - [ ] Variacao de tiles (grama clara/escura misturada)
+
+
+---
+
+## 29. Sessão 27/09/2026 — Reino do Lobby (Phaser)
+
+### 🎯 Objetivo
+Criar um reino no centro do mundo com muros, portões, prédios e casas (estilo Curse of Aros).
+
+### 🏰 Estrutura implementada
+- **Mapa aumentado:** 3200 → 4096px (64x64 tiles)
+- **Reino:** tiles 12 a 52 (40x40) = 2560px
+- **Muros:** externo completo com 4 portões (N/S/L/O)
+- **Fonte central:** círculo azul (placeholder)
+- **8 prédios:** retângulos placeholder nos 4 quadrantes
+- **20 casas:** retângulos pequenos nos vãos
+
+### 📐 Coordenadas (importante)
+- `REINO_X = 12, REINO_Y = 12, REINO_W = 40, REINO_H = 40`
+- Portões: tiles 29-35 (centro de cada lado)
+- Fonte: `(REINO_X + REINO_W/2) * TILE` = 2048px
+- Player spawna em `LW/2, LH/2` = 2048px (na fonte)
+
+### 🎨 Zoom e câmera
+- `setZoom(0.32)` — vê o reino todo (2800px visíveis)
+- Câmera segue player com `startFollow(player, true, 0.08, 0.08)`
+
+### 📦 Sprites usados
+- `muro_frente.png` (64x128) — muro horizontal
+- `muro_lateral.png` (64x128) — muro vertical
+- `portao.png` (64x128) — portões
+- `pedra_ruinas.png` (64x64) — chão de caminhos
+- `grama_lobby.png` (64x64) — chão do reino
+
+### ⚠️ DECISÕES PENDENTES (retomar aqui)
+1. **Prédios e casas são placeholders** — são retângulos coloridos, precisam virar sprites reais
+2. **Tamanho das casas:** planta aprovada vs jogo atual tem diferença visual (casas pequenas demais)
+3. **Densidade:** muito espaço verde vazio entre prédios e casas
+4. **Cerca do lobby:** foi tentada mas `fence_medieval.png` é spritesheet inteiro, ficou bagunçado. Revertido.
+5. **Árvores do mundo:** desativadas temporariamente (`if (true) continue;`) — reativar depois
+
+### 🔍 Próximos passos sugeridos
+1. [URGENTE] Aumentar tamanho das casas (3x3 → 4x4 tiles) + adicionar sprites reais de casa
+2. Adensar: mais casas + árvores pequenas entre prédios
+3. Resolver cerca do lobby (extrair tile correto do spritesheet)
+4. Reativar árvores do mundo (com `rand() < 0.4`)
+5. Adicionar NPCs nas posições dos prédios
+6. Decoração: barris, flores, fogueiras, bancos
+
+### 📦 Backups dessa sessão
+- `~/rpg/templates/jogo.html.bak_antes_reino`
+- `~/rpg/templates/jogo.html.bak_pre_A`
+- `~/rpg/templates/jogo.html.bak_A1_ok` (após prédios)
+- `~/rpg/templates/jogo.html.bak_antes_cerca` (com cerca bugada)
+- `~/rpg/rpg.db.bak_reino_v1`
+
+### 🔑 Commits
+- `7b7fe34` feat: reino com muros, portoes, 8 predios e 20 casas (placeholders)
+
+### 💡 Lições
+- Sprites LPC de "cerca" são spritesheets grandes — não dá pra usar direto como tile
+- Sempre testar zoom novo: 0.7 era perto, 0.32 é o ideal pro reino
+- Retângulos puros funcionam bem pra validar layout antes de sprites reais
