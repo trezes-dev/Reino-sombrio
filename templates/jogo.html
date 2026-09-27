@@ -79,6 +79,7 @@ function preload() {
   this.load.image('banquinho_horizontal', '/static/sprites/itens/banquinho_horizontal.png');
   this.load.image('banquinho', '/static/sprites/itens/banquinho.png');
   this.load.image('banquao', '/static/sprites/itens/banquao.png');
+  this.load.image('npc_mercador', '/static/sprites/npc-mercador.png');
   this.load.image('fogueira_apagada', '/static/sprites/deco_extraida/fogueira_apagada.png');
   // ===== DECORACAO =====
   this.load.image('fonte_real', '/static/sprites/deco_extraida/fonte_01.png');
@@ -224,6 +225,17 @@ function create() {
     ['banquinho_horizontal', 64.5, 50, 2],
     ['banquinho', 63, 49, 2],
     ['banquinho', 63, 51, 2],
+    // Arvores verdes
+    ['tree-arvore_113', 61, 46, 1],
+    ['tree-arvore_108', 74, 46, 1],
+    ['tree-arvore_109', 72, 51, 1],
+    ['tree-arvore_110', 83, 49, 1],
+    ['tree-arvore_107', 85, 61, 2],
+    ['tree-arvore_113', 51, 47, 1],
+    ['tree-arvore_108', 48, 50, 1],
+    // Novas arvores ao redor (68, 43)
+    ['tree-arvore_111', 68, 44, 1],
+    ['npc_mercador', 63, 45, 1.5],
   ];
   
   for (var di = 0; di < deco_manual.length; di++) {
