@@ -68,6 +68,10 @@ var joyDelta = {x:0, y:0};
 function preload() {
   this.load.image('grama', '/static/sprites/terreno/chao/grama_lobby.png');
   this.load.image('terra', '/static/sprites/terreno/chao/terra_caminho.png');
+  this.load.image('pedra', '/static/sprites/terreno/chao/pedra_ruinas.png');
+  this.load.image('muro_frente', '/static/sprites/lobby/muros/muro_frente.png');
+  this.load.image('muro_lateral', '/static/sprites/lobby/muros/muro_lateral.png');
+  this.load.image('portao', '/static/sprites/lobby/muros/portao.png');
   // ARVORES - 5 por cor (20 no total)
 var ARVORES_CARREGAR = {
     brown:  ['brown_01','brown_02','brown_03','brown_04','brown_05','brown_06','brown_07','brown_08','brown_09','brown_10','brown_11','brown_12','brown_13','brown_14','brown_15','brown_16','brown_17','brown_18','brown_19','brown_20','brown_21','brown_22','brown_23','brown_24','brown_25','brown_26','brown_27','brown_28','brown_29','brown_30','brown_31','brown_32','brown_33','brown_34','brown_35','brown_36','brown_37','brown_38','brown_39'],
@@ -99,23 +103,101 @@ var ARVORES_CARREGAR = {
 
 function create() {
   var TILE = 64;
-  var LW = 3200, LH = 3200;
+  var LW = 4096, LH = 4096;
+  // Centro do mundo (usado pelo player e camera)
+  var cx = LW / 2;
+  var cy = LH / 2;
 
-  // Chao
+  // ===== CHAO DO MUNDO (com reino central) =====
+  // O reino ocupa tiles 12 a 52 (40x40 tiles)
+  var REINO_X = 12;
+  var REINO_Y = 12;
+  var REINO_W = 40;
+  var REINO_H = 40;
+
+  function dentroReino(tx, ty) {
+    return tx >= REINO_X && tx < REINO_X + REINO_W &&
+           ty >= REINO_Y && ty < REINO_Y + REINO_H;
+  }
+
+  function ehCaminhoReino(tx, ty) {
+    if (!dentroReino(tx, ty)) return false;
+    var rcx = REINO_X + REINO_W / 2;
+    var rcy = REINO_Y + REINO_H / 2;
+    return Math.abs(tx - rcx) <= 3 || Math.abs(ty - rcy) <= 3;
+  }
+
+  // Chao base (grama em todo lugar + pedra no reino)
   for (var y = 0; y < LH; y += TILE) {
     for (var x = 0; x < LW; x += TILE) {
-      this.add.image(x, y, 'grama').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(0);
+      var tx = Math.floor(x / TILE);
+      var ty = Math.floor(y / TILE);
+      if (dentroReino(tx, ty) && ehCaminhoReino(tx, ty)) {
+        this.add.image(x, y, 'pedra').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(0);
+      } else {
+        this.add.image(x, y, 'grama').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(0);
+      }
     }
   }
 
-  // Cruz de caminho
-  var cx = LW / 2, cy = LH / 2;
-  for (var x2 = 0; x2 < LW; x2 += TILE) {
-    this.add.image(x2, cy - TILE, 'terra').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(1);
+  // Fonte central
+  var cx_px = (REINO_X + REINO_W / 2) * TILE;
+  var cy_px = (REINO_Y + REINO_H / 2) * TILE;
+  var fonte_borda = this.add.circle(cx_px, cy_px, TILE * 2.8, 0x2a6090);
+  fonte_borda.setDepth(1);
+  var fonte = this.add.circle(cx_px, cy_px, TILE * 2.5, 0x4aa0ff);
+  fonte.setDepth(1.5);
+  console.log('[REINO] chao + fonte criados em ' + REINO_X + ',' + REINO_Y);
+
+  // ===== MUROS DO REINO =====
+  var GATE_INI = 29;
+  var GATE_FIM = 35;
+
+  // Muro NORTE (topo)
+  for (var wx = REINO_X; wx < REINO_X + REINO_W; wx++) {
+    var wx_px = wx * TILE + TILE / 2;
+    var wy_px = REINO_Y * TILE + TILE;
+    var eh_portao_n = (wx >= GATE_INI && wx <= GATE_FIM);
+    var key_n = eh_portao_n ? 'portao' : 'muro_frente';
+    var wall_n = this.add.image(wx_px, wy_px, key_n);
+    wall_n.setOrigin(0.5, 1);
+    wall_n.setDepth(wy_px - 1);
   }
-  for (var y2 = 0; y2 < LH; y2 += TILE) {
-    this.add.image(cx - TILE, y2, 'terra').setOrigin(0, 0).setDisplaySize(TILE, TILE).setDepth(1);
+
+  // Muro SUL (fundo)
+  for (var wx = REINO_X; wx < REINO_X + REINO_W; wx++) {
+    var wx_px = wx * TILE + TILE / 2;
+    var wy_px = (REINO_Y + REINO_H) * TILE;
+    var eh_portao_s = (wx >= GATE_INI && wx <= GATE_FIM);
+    var key_s = eh_portao_s ? 'portao' : 'muro_frente';
+    var wall_s = this.add.image(wx_px, wy_px, key_s);
+    wall_s.setOrigin(0.5, 1);
+    wall_s.setDepth(wy_px - 1);
   }
+
+  // Muro OESTE (esquerdo)
+  for (var wy = REINO_Y; wy < REINO_Y + REINO_H; wy++) {
+    var wx_px = REINO_X * TILE + TILE / 2;
+    var wy_px = wy * TILE + TILE;
+    var eh_portao_o = (wy >= GATE_INI && wy <= GATE_FIM);
+    var key_o = eh_portao_o ? 'portao' : 'muro_lateral';
+    var wall_o = this.add.image(wx_px, wy_px, key_o);
+    wall_o.setOrigin(0.5, 1);
+    wall_o.setDepth(wy_px - 1);
+  }
+
+  // Muro LESTE (direito)
+  for (var wy = REINO_Y; wy < REINO_Y + REINO_H; wy++) {
+    var wx_px = (REINO_X + REINO_W) * TILE - TILE / 2;
+    var wy_px = wy * TILE + TILE;
+    var eh_portao_l = (wy >= GATE_INI && wy <= GATE_FIM);
+    var key_l = eh_portao_l ? 'portao' : 'muro_lateral';
+    var wall_l = this.add.image(wx_px, wy_px, key_l);
+    wall_l.setOrigin(0.5, 1);
+    wall_l.setDepth(wy_px - 1);
+  }
+
+  console.log('[REINO] muros criados');
 
   // Cria as animacoes
   var DIRS = ['baixo','cima','esq','dir'];
@@ -147,7 +229,7 @@ function create() {
   this.physics.world.setBounds(0, 0, LW, LH);
   this.cameras.main.setBounds(0, 0, LW, LH);
   this.cameras.main.startFollow(player, true, 0.08, 0.08);
-  this.cameras.main.setZoom(0.7);
+  this.cameras.main.setZoom(0.3);
 
   // ===== DISTRIBUICAO DE ARVORES =====
 var ARVORES_CARREGAR = {
@@ -173,13 +255,43 @@ var ARVORES_CARREGAR = {
   }
 
   var PASSO = 256;
+  var MARGEM_BORDA = 300;         // nao coloca arvore perto da borda do mundo
+  var DIST_MIN = 130;              // distancia minima entre 2 arvores (px)
   var contadorArv = 0;
+  var posicoesColocadas = [];     // lista de {x, y} das arvores ja colocadas
+
+  function muitoPerto(nx, ny) {
+    for (var k = 0; k < posicoesColocadas.length; k++) {
+      var dx = nx - posicoesColocadas[k].x;
+      var dy = ny - posicoesColocadas[k].y;
+      if (Math.sqrt(dx*dx + dy*dy) < DIST_MIN) return true;
+    }
+    return false;
+  }
+
   for (var ty = 0; ty < LH; ty += PASSO) {
     for (var tx = 0; tx < LW; tx += PASSO) {
       var px = tx + rand() * PASSO;
       var py = ty + rand() * PASSO;
-      // 60% vazio
-      if (rand() < 0.4) continue;
+
+      // Margem das bordas
+      if (px < MARGEM_BORDA || px > LW - MARGEM_BORDA) continue;
+      if (py < MARGEM_BORDA || py > LH - MARGEM_BORDA) continue;
+
+      // Vazio (40%)
+      if (true) continue;  // ARVORES DESATIVADAS TEMPORARIAMENTE
+
+      // Distancia minima entre arvores
+      if (muitoPerto(px, py)) continue;
+
+      // Nao coloca arvore em cima do caminho (cruz central)
+      // O caminho eh uma cruz de 128px de largura (2 tiles)
+      var cx3 = LW / 2, cy3 = LH / 2;
+      var TAM_CAMINHO = 128;
+      var no_caminho_h = (py > cy3 - TAM_CAMINHO && py < cy3 + TAM_CAMINHO);
+      var no_caminho_v = (px > cx3 - TAM_CAMINHO && px < cx3 + TAM_CAMINHO);
+      if (no_caminho_h || no_caminho_v) continue;
+
       var bioma = biomaEm(px, py);
       var lista = ARVORES_CARREGAR[bioma];
       var arq = lista[Math.floor(rand() * lista.length)];
@@ -188,12 +300,13 @@ var ARVORES_CARREGAR = {
       arv.setOrigin(0.5, 1);
       arv.setScale(1);
       arv.setDepth(py);
+      posicoesColocadas.push({ x: px, y: py });
       contadorArv++;
     }
   }
-  console.log('[DECOR] ' + contadorArv + ' arvores colocadas');
+  console.log('[DECOR] ' + contadorArv + ' arvores colocadas (min dist ' + DIST_MIN + 'px)');
 
-  // Teclado
+    // Teclado
   teclas = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
 
   // JOYSTICK
